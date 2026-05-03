@@ -213,161 +213,10 @@
       ]
     },
     {
-      "keyword": "consume",
-      "weight": 3,
-      "appears_in_units": [
-        "u058"
-      ]
-    },
-    {
-      "keyword": "consumptive",
-      "weight": 3,
-      "appears_in_units": [
-        "u039"
-      ]
-    },
-    {
-      "keyword": "participate",
-      "weight": 3,
-      "appears_in_units": [
-        "u021"
-      ]
-    },
-    {
       "keyword": "participatory",
       "weight": 3,
       "appears_in_units": [
         "u039"
-      ]
-    },
-    {
-      "keyword": "participates",
-      "weight": 3,
-      "appears_in_units": [
-        "u042",
-        "u057"
-      ]
-    },
-    {
-      "keyword": "discipline",
-      "weight": 3,
-      "appears_in_units": [
-        "u069",
-        "u087",
-        "u092"
-      ]
-    },
-    {
-      "keyword": "disciplines",
-      "weight": 3,
-      "appears_in_units": [
-        "u003",
-        "u022",
-        "u030",
-        "u097"
-      ]
-    },
-    {
-      "keyword": "practitioners",
-      "weight": 3,
-      "appears_in_units": [
-        "u072"
-      ]
-    },
-    {
-      "keyword": "read",
-      "weight": 3,
-      "appears_in_units": [
-        "u030",
-        "u067",
-        "u071",
-        "u078",
-        "u087",
-        "u097"
-      ]
-    },
-    {
-      "keyword": "reads",
-      "weight": 3,
-      "appears_in_units": [
-        "u051",
-        "u054",
-        "u055"
-      ]
-    },
-    {
-      "keyword": "reading",
-      "weight": 3,
-      "appears_in_units": [
-        "u009",
-        "u012",
-        "u015",
-        "u022",
-        "u048",
-        "u050",
-        "u063",
-        "u064",
-        "u069",
-        "u070",
-        "u073"
-      ]
-    },
-    {
-      "keyword": "attention",
-      "weight": 3,
-      "appears_in_units": [
-        "u009",
-        "u022",
-        "u046",
-        "u085",
-        "u092"
-      ]
-    },
-    {
-      "keyword": "sustained",
-      "weight": 3,
-      "appears_in_units": [
-        "u009",
-        "u012",
-        "u072",
-        "u085",
-        "u092"
-      ]
-    },
-    {
-      "keyword": "model",
-      "weight": 3,
-      "appears_in_units": [
-        "u008",
-        "u012",
-        "u016",
-        "u017",
-        "u018",
-        "u040",
-        "u044",
-        "u045",
-        "u049",
-        "u053",
-        "u056",
-        "u059",
-        "u061",
-        "u065",
-        "u072",
-        "u074",
-        "u078",
-        "u079",
-        "u081",
-        "u083",
-        "u088",
-        "u094",
-        "u095"
-      ]
-    },
-    {
-      "keyword": "models",
-      "weight": 3,
-      "appears_in_units": [
-        "u000"
       ]
     },
     {
@@ -389,97 +238,6 @@
       "weight": 3,
       "appears_in_units": [
         "u019"
-      ]
-    },
-    {
-      "keyword": "deployed",
-      "weight": 3,
-      "appears_in_units": [
-        "u019",
-        "u088"
-      ]
-    },
-    {
-      "keyword": "deployment",
-      "weight": 3,
-      "appears_in_units": [
-        "u094"
-      ]
-    },
-    {
-      "keyword": "door",
-      "weight": 3,
-      "appears_in_units": [
-        "u038",
-        "u084",
-        "u102"
-      ]
-    },
-    {
-      "keyword": "open",
-      "weight": 3,
-      "appears_in_units": [
-        "u038",
-        "u084"
-      ]
-    },
-    {
-      "keyword": "closing",
-      "weight": 3,
-      "appears_in_units": [
-        "u102"
-      ]
-    },
-    {
-      "keyword": "welcome",
-      "weight": 3,
-      "appears_in_units": [
-        "u102"
-      ]
-    },
-    {
-      "keyword": "pink",
-      "weight": 3,
-      "appears_in_units": [
-        "u014",
-        "u039",
-        "u042",
-        "u043",
-        "u044",
-        "u045",
-        "u047",
-        "u050",
-        "u051",
-        "u054",
-        "u055",
-        "u057",
-        "u091",
-        "u094"
-      ]
-    },
-    {
-      "keyword": "red",
-      "weight": 3,
-      "appears_in_units": [
-        "u004",
-        "u005",
-        "u013",
-        "u018",
-        "u052"
-      ]
-    },
-    {
-      "keyword": "blue",
-      "weight": 3,
-      "appears_in_units": [
-        "u013"
-      ]
-    },
-    {
-      "keyword": "purple",
-      "weight": 3,
-      "appears_in_units": [
-        "u013"
       ]
     },
     {
@@ -529,17 +287,26 @@
       ]
     },
     {
-      "keyword": "five-year",
+      "keyword": "door",
       "weight": 3,
       "appears_in_units": [
-        "u036"
+        "u038",
+        "u084",
+        "u102"
       ]
     },
     {
-      "keyword": "now",
+      "keyword": "welcome",
       "weight": 3,
       "appears_in_units": [
-        "u037"
+        "u102"
+      ]
+    },
+    {
+      "keyword": "closing",
+      "weight": 3,
+      "appears_in_units": [
+        "u102"
       ]
     }
   ]

@@ -33,25 +33,20 @@ from pathlib import Path
 KEYWORDS = [
     # Core epistemic vocabulary
     "territory", "map", "pattern", "interiority", "ambiguity", "encounter",
-    # The consumption thread
-    "consume", "consumed", "consuming", "consumption", "consumptive",
-    # The participation thread
-    "participate", "participatory", "participation", "participates",
-    # The discipline thread
-    "discipline", "disciplines", "practitioner", "practitioners",
-    # The reading thread
-    "read", "reads", "reading", "attention", "sustained",
-    # The deployment thread
-    "model", "models", "clinic", "clinics", "courtroom", "courtrooms",
-    "classroom", "classrooms", "deployed", "deployment",
-    # The threshold thread
-    "door", "open", "closing", "welcome",
-    # The color taxonomy
-    "pink", "red", "blue", "purple", "adversarial",
-    # The structural critique
-    "profit", "extracted", "commodifiable", "decorative",
-    # The temporal thread
-    "durational", "longitudinal", "five-year", "now",
+    # Consumption (collapsed from variants)
+    "consumption",
+    # Participation (collapsed from variants)
+    "participatory",
+    # Deployment-context triplet
+    "clinic", "clinics", "courtroom", "courtrooms", "classroom", "classrooms",
+    # Color taxonomy
+    "adversarial",
+    # Capitalism critique
+    "profit", "extracted", "decorative",
+    # Temporal
+    "durational", "longitudinal",
+    # Threshold
+    "door", "welcome", "closing",
 ]
 
 # Phrases that should never be split across units. Add to this list if the
