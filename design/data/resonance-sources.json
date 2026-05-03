@@ -213,6 +213,13 @@
       ]
     },
     {
+      "keyword": "consumptive",
+      "weight": 3,
+      "appears_in_units": [
+        "u039"
+      ]
+    },
+    {
       "keyword": "participatory",
       "weight": 3,
       "appears_in_units": [

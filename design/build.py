@@ -33,12 +33,12 @@ from pathlib import Path
 KEYWORDS = [
     # Core epistemic vocabulary
     "territory", "map", "pattern", "interiority", "ambiguity", "encounter",
-    # Consumption (collapsed from variants)
-    "consumption",
-    # Participation (collapsed from variants)
+    # Consumption (loaded form)
+    "consumptive",
+    # Participation
     "participatory",
-    # Deployment-context triplet
-    "clinic", "clinics", "courtroom", "courtrooms", "classroom", "classrooms",
+    # Deployment-context triplet (plural only — what the manifesto actually uses)
+    "clinics", "courtrooms", "classrooms",
     # Color taxonomy
     "adversarial",
     # Capitalism critique
