@@ -1,0 +1,546 @@
+{
+  "named_sources": [
+    {
+      "id": "D1",
+      "kind": "declaration",
+      "label": "Pink teaming is participatory, not consumptive.",
+      "weight": 5,
+      "angle": 30,
+      "active_when_unit_in": [
+        "u039",
+        "u040",
+        "u041",
+        "u042"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "declaration",
+      "label": "Pink teaming is durational.",
+      "weight": 5,
+      "angle": 102,
+      "active_when_unit_in": [
+        "u043",
+        "u044",
+        "u045",
+        "u046"
+      ]
+    },
+    {
+      "id": "D3",
+      "kind": "declaration",
+      "label": "Pink teaming embraces continuous ambiguity.",
+      "weight": 5,
+      "angle": 174,
+      "active_when_unit_in": [
+        "u047",
+        "u048",
+        "u049",
+        "u050"
+      ]
+    },
+    {
+      "id": "D4",
+      "kind": "declaration",
+      "label": "Pink teaming reads territory, not map.",
+      "weight": 5,
+      "angle": 246,
+      "active_when_unit_in": [
+        "u051",
+        "u052",
+        "u053",
+        "u054"
+      ]
+    },
+    {
+      "id": "D5",
+      "kind": "declaration",
+      "label": "Pink teaming reads pattern, not interiority.",
+      "weight": 5,
+      "angle": 318,
+      "active_when_unit_in": [
+        "u055",
+        "u056",
+        "u057"
+      ]
+    },
+    {
+      "id": "V1",
+      "kind": "vow",
+      "label": "I will not consume what I have not encountered.",
+      "weight": 4,
+      "ground_declaration": "D1",
+      "active_when_unit_in": [
+        "u058",
+        "u059",
+        "u060",
+        "u061"
+      ]
+    },
+    {
+      "id": "V2",
+      "kind": "vow",
+      "label": "I will stay in motion.",
+      "weight": 4,
+      "ground_declaration": "D2",
+      "active_when_unit_in": [
+        "u062",
+        "u063",
+        "u064",
+        "u065"
+      ]
+    },
+    {
+      "id": "V3",
+      "kind": "vow",
+      "label": "I will hold two readings at once.",
+      "weight": 4,
+      "ground_declaration": "D3",
+      "active_when_unit_in": [
+        "u066",
+        "u067",
+        "u068",
+        "u069",
+        "u070"
+      ]
+    },
+    {
+      "id": "V4",
+      "kind": "vow",
+      "label": "I will trust what I have read over what I have been told.",
+      "weight": 4,
+      "ground_declaration": "D4",
+      "active_when_unit_in": [
+        "u071",
+        "u072",
+        "u073",
+        "u074",
+        "u075"
+      ]
+    },
+    {
+      "id": "V5",
+      "kind": "vow",
+      "label": "I will name calibrated humility when I see it.",
+      "weight": 4,
+      "ground_declaration": "D5",
+      "active_when_unit_in": [
+        "u076",
+        "u077",
+        "u078",
+        "u079"
+      ]
+    },
+    {
+      "id": "V6",
+      "kind": "vow",
+      "label": "I will translate in the register of the work.",
+      "weight": 4,
+      "ground_declaration": null,
+      "active_when_unit_in": [
+        "u080",
+        "u081",
+        "u082",
+        "u083"
+      ]
+    },
+    {
+      "id": "V7",
+      "kind": "vow",
+      "label": "I will keep the door open.",
+      "weight": 4,
+      "ground_declaration": null,
+      "active_when_unit_in": [
+        "u084",
+        "u085",
+        "u086",
+        "u087"
+      ]
+    }
+  ],
+  "keyword_triggers": [
+    {
+      "keyword": "territory",
+      "weight": 3,
+      "appears_in_units": [
+        "u051"
+      ]
+    },
+    {
+      "keyword": "map",
+      "weight": 3,
+      "appears_in_units": [
+        "u051"
+      ]
+    },
+    {
+      "keyword": "pattern",
+      "weight": 3,
+      "appears_in_units": [
+        "u009",
+        "u046",
+        "u054",
+        "u055",
+        "u064"
+      ]
+    },
+    {
+      "keyword": "interiority",
+      "weight": 3,
+      "appears_in_units": [
+        "u055"
+      ]
+    },
+    {
+      "keyword": "ambiguity",
+      "weight": 3,
+      "appears_in_units": [
+        "u047",
+        "u048",
+        "u068",
+        "u097"
+      ]
+    },
+    {
+      "keyword": "encounter",
+      "weight": 3,
+      "appears_in_units": [
+        "u019",
+        "u041",
+        "u042",
+        "u060",
+        "u072"
+      ]
+    },
+    {
+      "keyword": "consume",
+      "weight": 3,
+      "appears_in_units": [
+        "u058"
+      ]
+    },
+    {
+      "keyword": "consumptive",
+      "weight": 3,
+      "appears_in_units": [
+        "u039"
+      ]
+    },
+    {
+      "keyword": "participate",
+      "weight": 3,
+      "appears_in_units": [
+        "u021"
+      ]
+    },
+    {
+      "keyword": "participatory",
+      "weight": 3,
+      "appears_in_units": [
+        "u039"
+      ]
+    },
+    {
+      "keyword": "participates",
+      "weight": 3,
+      "appears_in_units": [
+        "u042",
+        "u057"
+      ]
+    },
+    {
+      "keyword": "discipline",
+      "weight": 3,
+      "appears_in_units": [
+        "u069",
+        "u087",
+        "u092"
+      ]
+    },
+    {
+      "keyword": "disciplines",
+      "weight": 3,
+      "appears_in_units": [
+        "u003",
+        "u022",
+        "u030",
+        "u097"
+      ]
+    },
+    {
+      "keyword": "practitioners",
+      "weight": 3,
+      "appears_in_units": [
+        "u072"
+      ]
+    },
+    {
+      "keyword": "read",
+      "weight": 3,
+      "appears_in_units": [
+        "u030",
+        "u067",
+        "u071",
+        "u078",
+        "u087",
+        "u097"
+      ]
+    },
+    {
+      "keyword": "reads",
+      "weight": 3,
+      "appears_in_units": [
+        "u051",
+        "u054",
+        "u055"
+      ]
+    },
+    {
+      "keyword": "reading",
+      "weight": 3,
+      "appears_in_units": [
+        "u009",
+        "u012",
+        "u015",
+        "u022",
+        "u048",
+        "u050",
+        "u063",
+        "u064",
+        "u069",
+        "u070",
+        "u073"
+      ]
+    },
+    {
+      "keyword": "attention",
+      "weight": 3,
+      "appears_in_units": [
+        "u009",
+        "u022",
+        "u046",
+        "u085",
+        "u092"
+      ]
+    },
+    {
+      "keyword": "sustained",
+      "weight": 3,
+      "appears_in_units": [
+        "u009",
+        "u012",
+        "u072",
+        "u085",
+        "u092"
+      ]
+    },
+    {
+      "keyword": "model",
+      "weight": 3,
+      "appears_in_units": [
+        "u008",
+        "u012",
+        "u016",
+        "u017",
+        "u018",
+        "u040",
+        "u044",
+        "u045",
+        "u049",
+        "u053",
+        "u056",
+        "u059",
+        "u061",
+        "u065",
+        "u072",
+        "u074",
+        "u078",
+        "u079",
+        "u081",
+        "u083",
+        "u088",
+        "u094",
+        "u095"
+      ]
+    },
+    {
+      "keyword": "models",
+      "weight": 3,
+      "appears_in_units": [
+        "u000"
+      ]
+    },
+    {
+      "keyword": "clinics",
+      "weight": 3,
+      "appears_in_units": [
+        "u019"
+      ]
+    },
+    {
+      "keyword": "courtrooms",
+      "weight": 3,
+      "appears_in_units": [
+        "u019"
+      ]
+    },
+    {
+      "keyword": "classrooms",
+      "weight": 3,
+      "appears_in_units": [
+        "u019"
+      ]
+    },
+    {
+      "keyword": "deployed",
+      "weight": 3,
+      "appears_in_units": [
+        "u019",
+        "u088"
+      ]
+    },
+    {
+      "keyword": "deployment",
+      "weight": 3,
+      "appears_in_units": [
+        "u094"
+      ]
+    },
+    {
+      "keyword": "door",
+      "weight": 3,
+      "appears_in_units": [
+        "u038",
+        "u084",
+        "u102"
+      ]
+    },
+    {
+      "keyword": "open",
+      "weight": 3,
+      "appears_in_units": [
+        "u038",
+        "u084"
+      ]
+    },
+    {
+      "keyword": "closing",
+      "weight": 3,
+      "appears_in_units": [
+        "u102"
+      ]
+    },
+    {
+      "keyword": "welcome",
+      "weight": 3,
+      "appears_in_units": [
+        "u102"
+      ]
+    },
+    {
+      "keyword": "pink",
+      "weight": 3,
+      "appears_in_units": [
+        "u014",
+        "u039",
+        "u042",
+        "u043",
+        "u044",
+        "u045",
+        "u047",
+        "u050",
+        "u051",
+        "u054",
+        "u055",
+        "u057",
+        "u091",
+        "u094"
+      ]
+    },
+    {
+      "keyword": "red",
+      "weight": 3,
+      "appears_in_units": [
+        "u004",
+        "u005",
+        "u013",
+        "u018",
+        "u052"
+      ]
+    },
+    {
+      "keyword": "blue",
+      "weight": 3,
+      "appears_in_units": [
+        "u013"
+      ]
+    },
+    {
+      "keyword": "purple",
+      "weight": 3,
+      "appears_in_units": [
+        "u013"
+      ]
+    },
+    {
+      "keyword": "adversarial",
+      "weight": 3,
+      "appears_in_units": [
+        "u005",
+        "u013"
+      ]
+    },
+    {
+      "keyword": "profit",
+      "weight": 3,
+      "appears_in_units": [
+        "u029",
+        "u099"
+      ]
+    },
+    {
+      "keyword": "extracted",
+      "weight": 3,
+      "appears_in_units": [
+        "u025"
+      ]
+    },
+    {
+      "keyword": "decorative",
+      "weight": 3,
+      "appears_in_units": [
+        "u030",
+        "u032"
+      ]
+    },
+    {
+      "keyword": "durational",
+      "weight": 3,
+      "appears_in_units": [
+        "u043"
+      ]
+    },
+    {
+      "keyword": "longitudinal",
+      "weight": 3,
+      "appears_in_units": [
+        "u008",
+        "u046"
+      ]
+    },
+    {
+      "keyword": "five-year",
+      "weight": 3,
+      "appears_in_units": [
+        "u036"
+      ]
+    },
+    {
+      "keyword": "now",
+      "weight": 3,
+      "appears_in_units": [
+        "u037"
+      ]
+    }
+  ]
+}
