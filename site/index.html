@@ -126,18 +126,22 @@
         width: 100%;
         white-space: nowrap;
         transform-origin: left center;
-        /* The hero starts as the small serif left-column line and grows/morphs across the band.
-     We drive the animation from JS by toggling .in. */
+        /* Entry: slide in from the left with a slight horizontal stretch, strong
+           ease-out so it lands rather than flashes. Exit: quick fade + retract,
+           then JS swaps the text and re-adds .in for the next fragment. */
         opacity: 0;
-        transform: translateX(-72px) scale(0.28) rotate(-1.2deg);
+        transform: translateX(-140px) scaleX(0.78);
         transition:
-          opacity 0.95s cubic-bezier(0.2, 0.7, 0.2, 1),
-          transform 0.95s cubic-bezier(0.2, 0.7, 0.2, 1);
+          opacity 0.15s ease-in,
+          transform 0.15s ease-in;
         font-variation-settings: 'wght' 800;
       }
       .hero-line .text.in {
         opacity: 1;
-        transform: translateX(0) scale(1) rotate(0deg);
+        transform: translateX(0) scaleX(1);
+        transition:
+          opacity 0.36s cubic-bezier(0.18, 0.8, 0.18, 1),
+          transform 0.44s cubic-bezier(0.18, 0.8, 0.18, 1);
       }
 
       /* ── Surface band (the horizon) ───────────────────────────── */
@@ -407,14 +411,6 @@
         background: var(--ink);
         color: var(--paper);
         border-color: var(--ink);
-      }
-      .btn-read-aloud[disabled] {
-        cursor: not-allowed;
-        opacity: 0.4;
-      }
-      .btn-read-aloud[disabled]:hover {
-        background: var(--paper);
-        color: var(--ink);
       }
 
       /* Jump-to-start chip — same dimensions as the other foot buttons,
@@ -2119,6 +2115,32 @@
       }
       let lineHeights = [];
 
+      // Hero-line swap: play the 150ms exit, then change text and trigger entry.
+      // First call (no .in yet) skips the exit so the very first fragment shows
+      // immediately on load.
+      const HERO_EXIT_MS = 150;
+      let heroPending = null;
+      function showHero(text) {
+        if (heroPending) {
+          clearTimeout(heroPending);
+          heroPending = null;
+        }
+        const visible = heroText.classList.contains('in');
+        const swap = () => {
+          heroText.textContent = text;
+          // Force reflow so the from-state transform is committed before .in flips it.
+          void heroText.offsetWidth;
+          heroText.classList.add('in');
+          heroPending = null;
+        };
+        if (visible) {
+          heroText.classList.remove('in');
+          heroPending = setTimeout(swap, HERO_EXIT_MS);
+        } else {
+          requestAnimationFrame(swap);
+        }
+      }
+
       function setActive(i, fragmentIdx) {
         if (i < 0) i = 0;
         if (i >= UNITS.length) i = UNITS.length - 1;
@@ -2143,13 +2165,9 @@
           activeFragmentIdx = Math.min(fragmentIdx || 0, activeFragments.length - 1);
         }
 
-        // Update hero-line text with a smooth fade (use current fragment)
+        // Update hero-line text with an exit-then-enter swap (see showHero)
         const fragText = activeFragments[activeFragmentIdx] || u.text;
-        heroText.classList.remove('in');
-        // Force reflow then re-add to retrigger transition
-        void heroText.offsetWidth;
-        heroText.textContent = fragText;
-        requestAnimationFrame(() => heroText.classList.add('in'));
+        showHero(fragText);
 
         // Section tag
         const sectionLabel = sectionLabelFor(u);
@@ -2173,8 +2191,8 @@
         const head = document.getElementById('scrub-head');
         head.style.background = 'var(--pink)';
 
-        // Audio: speak the fragment that's now in the surface band.
-        if (typeof tts !== 'undefined' && tts.enabled) tts.speak(fragText);
+        // Audio: play unit MP3 on unit changes only (not on intra-unit fragment advances).
+        if (isUnitChange) audioPlayer.playUnit(u.id);
       }
 
       // Active unit's surface fragments and which one is showing.
@@ -3186,9 +3204,12 @@
           el.style.opacity = op.toFixed(3);
         }
 
-        // Advance dwell. While audio is reading, the TTS onend handler drives
-        // advancement — gate the dwell countdown so the timer doesn't fire too.
-        if (!paused && !(typeof tts !== 'undefined' && tts.blocking)) {
+        // Poll the audio player every frame — clears blocking when a unit ends,
+        // even if timeupdate didn't fire (e.g. after a playbackRate change).
+        audioPlayer.poll();
+
+        // Advance dwell. While audio is playing, audioPlayer.blocking gates the countdown.
+        if (!paused && !audioPlayer.blocking) {
           dwellRemaining -= dt * speedMul;
           if (dwellRemaining <= 0) {
             // Advance through this unit's fragments before moving on to the next unit.
@@ -3249,6 +3270,7 @@
         }
         i = Math.max(0, Math.min(SPEED_STEPS.length - 1, i + dir));
         setSpeed(SPEED_STEPS[i]);
+        audioPlayer.setRate(SPEED_STEPS[i]); // audioPlayer always live on user click
       }
       document.getElementById('btn-slow').addEventListener('click', () => stepSpeed(-1));
       document.getElementById('btn-fast').addEventListener('click', () => stepSpeed(+1));
@@ -3259,28 +3281,16 @@
         paused = !paused;
         e.currentTarget.classList.toggle('paused', paused);
         e.currentTarget.textContent = paused ? 'Resume' : 'Pause';
-        // Cancel-on-pause / respeak-on-resume — sidesteps Chrome's flaky
-        // speechSynthesis.pause()/resume() pair.
-        if (typeof tts !== 'undefined' && tts.enabled) {
-          if (paused) tts.cancel();
-          else
-            tts.speak(
-              activeFragments[activeFragmentIdx] || (UNITS[activeIdx] && UNITS[activeIdx].text)
-            );
-        }
+        if (paused) audioPlayer.pause();
+        else audioPlayer.resume();
       });
 
-      /* Jump to the first manifesto unit. Cancels any in-flight TTS so
-         the speech doesn't keep reading the unit we just left, and snaps
-         scrollY to scrollTarget so the column doesn't ease through 40
-         lines of intermediate text. */
+      /* Jump to the first manifesto unit. Cancels audio, snaps scroll. */
       document.getElementById('btn-top').addEventListener('click', () => {
-        if (typeof tts !== 'undefined' && tts.enabled) tts.cancel();
+        audioPlayer.cancel();
         setActive(0);
         scrollY = scrollTarget;
-        if (typeof tts !== 'undefined' && tts.enabled && !paused) {
-          tts.speak(activeFragments[0] || UNITS[0].text);
-        }
+        if (audioPlayer.enabled && !paused) audioPlayer.playUnit(UNITS[0].id);
       });
 
       let resizeT = null;
@@ -3309,148 +3319,165 @@
         }
       });
 
-      /* ── Audio reading (Web Speech API) ─────────────────────────
-   Audio-leads pacing: while tts.blocking is true, the dwell countdown is
-   gated off; tts onend triggers the next fragment via the existing
-   advance path (we just zero dwellRemaining and let tick() carry it). */
-      const tts = (function () {
-        const VOICE_PREFERENCES = [
-          'Ava (Premium)',
-          'Ava (Enhanced)',
-          'Ava',
-          'Samantha',
-          'Daniel (Enhanced)',
-          'Daniel',
-          'Karen',
-          'Google US English',
-          'Microsoft Aria Online (Natural) - English (United States)',
-          'Microsoft Jenny Online (Natural) - English (United States)'
-        ];
+      /* ── Wheel/trackpad nav ────────────────────────────────────
+         Accumulate deltaY across events, fire one unit advance per
+         WHEEL_THRESHOLD pixels, throttled so a fast swipe doesn't
+         blow through dozens of units. */
+      let _wheelAccum = 0;
+      let _wheelLastFire = 0;
+      const WHEEL_THRESHOLD = 60;   // px of deltaY per unit advance
+      const WHEEL_THROTTLE_MS = 80; // min ms between fires
+      window.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        _wheelAccum += e.deltaY;
+        const now = performance.now();
+        if (now - _wheelLastFire < WHEEL_THROTTLE_MS) return;
+        if (Math.abs(_wheelAccum) < WHEEL_THRESHOLD) return;
+        const dir = _wheelAccum > 0 ? 1 : -1;
+        _wheelAccum = 0;
+        _wheelLastFire = now;
+        setActive(activeIdx + dir);
+      }, { passive: false });
 
-        const supported = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
-        const state = {
-          enabled: false,
-          blocking: false, // true while an utterance is in flight
-          voice: null,
-          utterance: null, // current utterance (for onend identity check)
-          supported
-        };
+      /* ── Audio reading (single Vera MP3, position-based seek) ────────────────
+   One <audio> element holds vera.mp3. playUnit decides whether to seek by
+   comparing the current audio position to the target unit's start_ms — if
+   we're already playing and within ~0.5s of the target start, the audio is
+   continuing naturally and we just slide _endTime forward (no seek, no gap).
+   Otherwise (paused, far away, or different unit), we seek and play. */
+      const audioPlayer = (function () {
+        let manifest    = null;  // id → {id, start_ms, end_ms, duration_ms}
+        let _endTime    = 0;     // media seconds when current unit should stop
+        let _unitId     = null;
+        let _enabled    = false;
+        let _blocking   = false;
+        let _pendingId  = null;  // unitId to play once manifest loads
+        let _tailPath   = null;  // optional tail-audio file to chain after _endTime
 
-        function pickVoice() {
-          if (!supported) return null;
-          const voices = speechSynthesis.getVoices();
-          if (!voices || !voices.length) return null;
-          for (const name of VOICE_PREFERENCES) {
-            const hit = voices.find((v) => v.name === name);
-            if (hit) return hit;
+        const audio = new Audio('audio/vera.mp3');
+        audio.preload = 'auto';
+        const tailAudio = new Audio();   // shared element for tail-audio playback
+        tailAudio.preload = 'auto';
+
+        fetch('audio/manifest.json?v=' + Date.now())
+          .then((r) => r.json())
+          .then((m) => {
+            manifest = Object.fromEntries(m.map((e) => [e.id, e]));
+            if (_pendingId) { const id = _pendingId; _pendingId = null; playUnit(id); }
+          })
+          .catch(() => { /* silent fallback to dwell timing */ });
+
+        // Helper: end-of-unit handling. If the unit had a tail audio file
+        // (e.g. u102 → welcome.mp3 because vera.mp3 doesn't contain "Welcome"),
+        // chain it on; the tail's onended clears blocking afterwards.
+        function _onUnitEnd() {
+          if (_tailPath) {
+            const path = _tailPath;
+            _tailPath = null;
+            audio.pause();
+            tailAudio.src = path;
+            tailAudio.playbackRate = Math.max(0.5, Math.min(2.0, speedMul));
+            tailAudio.play().catch(() => {
+              _blocking = false; _unitId = null; dwellRemaining = 0;
+            });
+            return;
           }
-          const englishLocal = voices.find(
-            (v) => v.lang && v.lang.toLowerCase().startsWith('en') && v.localService
-          );
-          if (englishLocal) return englishLocal;
-          const english = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('en'));
-          return english || voices[0];
+          _blocking = false;
+          _unitId   = null;
+          dwellRemaining = 0;
         }
 
-        function rate() {
-          return Math.max(0.5, Math.min(2.0, speedMul));
+        // Don't pause at unit boundaries — let audio keep flowing.
+        // The next playUnit call will detect the natural continuation by position.
+        audio.addEventListener('timeupdate', () => {
+          if (!_blocking) return;
+          if (audio.currentTime >= _endTime) _onUnitEnd();
+        });
+
+        audio.addEventListener('ended', () => { _blocking = false; _unitId = null; });
+        audio.addEventListener('error', () => { _blocking = false; _unitId = null; _tailPath = null; });
+
+        tailAudio.addEventListener('ended', () => {
+          _blocking = false; _unitId = null; dwellRemaining = 0;
+        });
+        tailAudio.addEventListener('error', () => {
+          _blocking = false; _unitId = null;
+        });
+
+        function playUnit(unitId) {
+          if (!_enabled) return;
+          if (!manifest) { _pendingId = unitId; return; } // queue until fetch resolves
+          const entry = manifest[unitId];
+          if (!entry) return;
+
+          const targetStart = entry.start_ms / 1000;
+          // Natural continuation = audio is currently playing AND its position is
+          // within half a second of the target start. Otherwise we seek.
+          const continuingNaturally =
+            !audio.paused && Math.abs(audio.currentTime - targetStart) < 0.5;
+
+          _unitId   = unitId;
+          _endTime  = entry.end_ms / 1000;
+          _blocking = true;
+          _tailPath = entry.tail_audio || null;   // chain extra file after _endTime
+          audio.playbackRate = Math.max(0.5, Math.min(2.0, speedMul));
+
+          if (!continuingNaturally) {
+            audio.currentTime = targetStart;
+            if (!paused) {
+              audio.play().catch(() => { _blocking = false; _unitId = null; });
+            }
+          }
         }
 
-        function speak(text) {
-          if (!supported || !state.enabled || !text) return;
-          speechSynthesis.cancel();
-          const u = new SpeechSynthesisUtterance(text);
-          if (state.voice) u.voice = state.voice;
-          u.rate = rate();
-          u.pitch = 1.0;
-          u.volume = 1.0;
-          state.utterance = u;
-          state.blocking = true;
-          u.onend = () => {
-            // Stale utterance from a prior cancel — ignore.
-            if (u !== state.utterance) return;
-            state.blocking = false;
-            state.utterance = null;
-            // Hand control back to the dwell loop, which will advance on next tick.
-            dwellRemaining = 0;
-          };
-          u.onerror = () => {
-            if (u !== state.utterance) return;
-            state.blocking = false;
-            state.utterance = null;
-            // Don't auto-advance on error — leave the visual where it is.
-          };
-          speechSynthesis.speak(u);
+        function pause()    { audio.pause(); tailAudio.pause(); }
+        function resume()   {
+          if (!_unitId) return;
+          // If tail audio is the active source (mid-tail), resume it; else resume main.
+          if (!tailAudio.paused || (tailAudio.currentTime > 0 && tailAudio.currentTime < tailAudio.duration)) {
+            tailAudio.play().catch(() => {});
+          } else {
+            audio.play().catch(() => {});
+          }
         }
-
-        function cancel() {
-          if (!supported) return;
-          state.utterance = null; // mark stale before cancel so onend exits early
-          state.blocking = false;
-          speechSynthesis.cancel();
+        function setRate(r) {
+          const v = Math.max(0.5, Math.min(2.0, r));
+          audio.playbackRate     = v;
+          tailAudio.playbackRate = v;
         }
-
-        function setEnabled(on) {
-          state.enabled = !!on;
-          if (!state.enabled) cancel();
+        function cancel()   {
+          audio.pause(); tailAudio.pause();
+          _blocking = false; _unitId = null; _pendingId = null; _tailPath = null;
         }
+        function setEnabled(on) { _enabled = !!on; if (!_enabled) cancel(); }
 
         function init() {
           const btn = document.getElementById('btn-read-aloud');
-          if (!supported) {
-            btn.setAttribute('disabled', 'true');
-            btn.textContent = 'No audio';
-            btn.title = 'Web Speech API not available in this browser';
-            return;
-          }
-          state.voice = pickVoice();
-          if (!state.voice) {
-            // Voices load async in Chrome — wait for the event.
-            speechSynthesis.addEventListener(
-              'voiceschanged',
-              () => {
-                if (!state.voice) {
-                  state.voice = pickVoice();
-                  if (state.voice) console.log('[tts] using voice:', state.voice.name);
-                }
-              },
-              { once: true }
-            );
-          } else {
-            console.log('[tts] using voice:', state.voice.name);
-          }
-
           btn.addEventListener('click', () => {
-            const next = !state.enabled;
+            const next = !_enabled;
             setEnabled(next);
             btn.classList.toggle('active', next);
             btn.setAttribute('aria-pressed', String(next));
-            if (next && UNITS.length && !paused) {
-              const text =
-                activeFragments[activeFragmentIdx] || (UNITS[activeIdx] && UNITS[activeIdx].text);
-              speak(text);
-            }
+            if (next && UNITS.length && !paused) playUnit(UNITS[activeIdx].id);
           });
         }
 
-        return {
-          speak,
-          cancel,
-          setEnabled,
-          init,
-          get enabled() {
-            return state.enabled;
-          },
-          get blocking() {
-            return state.blocking;
-          },
-          get voice() {
-            return state.voice;
+        // Polled from tick() every frame as a safety net — timeupdate doesn't
+        // always fire reliably after playbackRate changes.
+        function poll() {
+          if (_blocking && _endTime > 0 && !audio.paused && audio.currentTime >= _endTime) {
+            _onUnitEnd();
           }
+        }
+
+        return {
+          playUnit, pause, resume, setRate, cancel, setEnabled, init, poll,
+          get enabled()  { return _enabled; },
+          get blocking() { return _blocking; },
         };
       })();
 
-      tts.init();
+      audioPlayer.init();
 
       loadAll().catch((err) => {
         console.error('load error', err);
