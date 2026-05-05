@@ -417,6 +417,25 @@
         color: var(--ink);
       }
 
+      /* Jump-to-start chip — same dimensions as the other foot buttons,
+         glyph centered, slightly larger font for the arrow. */
+      .btn-top {
+        all: unset;
+        cursor: pointer;
+        padding: 0.55rem 0.95rem;
+        background: var(--paper);
+        border: 1px solid var(--ink);
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        line-height: 1;
+        letter-spacing: 0.08em;
+        color: var(--ink);
+      }
+      .btn-top:hover {
+        background: var(--ink);
+        color: var(--paper);
+      }
+
       /* ── Left progress tick on text column ────────────────────── */
       .scrubber {
         position: fixed;
@@ -517,6 +536,7 @@
       </div>
       <button class="btn-pause" id="btn-pause">Pause</button>
       <button class="btn-read-aloud" id="btn-read-aloud" aria-pressed="false">Read</button>
+      <button class="btn-top" id="btn-top" aria-label="Jump to start" title="Jump to start">&#x2191;</button>
     </div>
 
     <a class="byline-link" href="https://atmarcus.net" target="_blank" rel="noopener"
@@ -3196,9 +3216,7 @@
           measureLines();
           setupSkyCanvas();
           setupDeepCanvas();
-          // Start somewhere meaningful — u040 is in section "declaration_d1" range
-          const startIdx = Math.min(40, UNITS.length - 1);
-          setActive(startIdx);
+          setActive(0);
           scrollY = scrollTarget; // jump to start
           lastTs = performance.now();
           requestAnimationFrame(tick);
@@ -3249,6 +3267,19 @@
             tts.speak(
               activeFragments[activeFragmentIdx] || (UNITS[activeIdx] && UNITS[activeIdx].text)
             );
+        }
+      });
+
+      /* Jump to the first manifesto unit. Cancels any in-flight TTS so
+         the speech doesn't keep reading the unit we just left, and snaps
+         scrollY to scrollTarget so the column doesn't ease through 40
+         lines of intermediate text. */
+      document.getElementById('btn-top').addEventListener('click', () => {
+        if (typeof tts !== 'undefined' && tts.enabled) tts.cancel();
+        setActive(0);
+        scrollY = scrollTarget;
+        if (typeof tts !== 'undefined' && tts.enabled && !paused) {
+          tts.speak(activeFragments[0] || UNITS[0].text);
         }
       });
 
