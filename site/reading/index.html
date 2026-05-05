@@ -1159,15 +1159,16 @@ clamped to [2.0, 7.0]</code></pre>
 
         <p>The demonstration below is the eight runs, swappable. Move the slider and watch the cloud rearrange. Some clusters stay tight across every seed—those are real neighborhoods in the model's geometry. Some points wander a lot—those relationships are projection artifacts.</p>
 
-        <!-- ── Demo 3 — UMAP eight seeds (data-wired to all 8 layouts) ── -->
-        <div class="demo" id="demo-umap" role="group" aria-label="UMAP eight-seeds demo: drag the slider to swap between the eight projections of the same embeddings.">
-          <div class="demo-caption">Eight UMAP runs of the same embeddings. Drag the slider. Watch what stays put and what wanders.</div>
+        <!-- ── Demo 3 — UMAP eight seeds (data-wired to all 8 layouts, hover-reveal) ── -->
+        <div class="demo" id="demo-umap" role="group" aria-label="UMAP eight-seeds demo: drag the slider to swap between the eight projections of the same embeddings. Hover any candlestick to read its sentence.">
+          <div class="demo-caption">Eight UMAP runs of the same embeddings. Drag the slider. Hover any candlestick to read its sentence.</div>
           <canvas id="demo-umap-canvas" width="600" height="380"></canvas>
           <div class="demo-controls demo-slider">
             <label for="demo-umap-slider">seed <span id="demo-umap-seed">0</span></label>
             <input type="range" id="demo-umap-slider" min="0" max="7" value="0" step="1" aria-label="UMAP seed 0 through 7">
           </div>
           <div class="demo-stats" id="demo-umap-stats">Loading layouts…</div>
+          <div class="demo-hover" id="demo-umap-hover" aria-live="polite"></div>
         </div>
         <script>
         (function () {
@@ -1183,11 +1184,14 @@ clamped to [2.0, 7.0]</code></pre>
           const slider = document.getElementById('demo-umap-slider');
           const seedLabel = document.getElementById('demo-umap-seed');
           const statsEl = document.getElementById('demo-umap-stats');
+          const hoverEl = document.getElementById('demo-umap-hover');
 
           let LAYOUTS = null;     // [seed][i] = [x, y]
           let PROPS   = null;     // candlestick props + drift state per curated unit
+          let TEXTS   = null;     // sentence text per curated unit
           let mostInvariantIdx = -1;
           let mostUnstableIdx = -1;
+          let hoveredI = -1;
           let currentSeed = 0;
           let targetSeed = 0;
           let interpAmt = 1;       // 0..1 between currentSeed and targetSeed
@@ -1213,6 +1217,20 @@ clamped to [2.0, 7.0]</code></pre>
             };
           }
 
+          // Place a label beside a candlestick head, clamped so it stays
+          // inside the canvas. Mirrors to the other side if it would clip.
+          function drawClampedLabel(text, dotX, dotY, W, H, fillStyle) {
+            ctx.font = '10px JetBrains Mono, Menlo, monospace';
+            const textW = ctx.measureText(text).width;
+            let lx = dotX + 8;
+            let ly = dotY - 6;
+            if (lx + textW > W - 4) lx = dotX - textW - 8;
+            if (ly < 12)            ly = dotY + 14;
+            if (lx < 4)             lx = 4;
+            ctx.fillStyle = fillStyle;
+            ctx.fillText(text, lx, ly);
+          }
+
           function render() {
             if (!LAYOUTS || !PROPS) return;
             const W = canvas.width, H = canvas.height;
@@ -1220,7 +1238,7 @@ clamped to [2.0, 7.0]</code></pre>
             const from = LAYOUTS[currentSeed];
             const to   = LAYOUTS[targetSeed];
 
-            // Pass 1 — haze on all non-invariant, non-unstable points.
+            // Pass 1 — haze on all non-invariant points.
             CURATED_IDS.forEach((_, i) => {
               if (i === mostInvariantIdx) return;
               window.deepGlyph.drawHaze(ctx, pointAt(i, W, H, from, to));
@@ -1233,26 +1251,77 @@ clamped to [2.0, 7.0]</code></pre>
               window.deepGlyph.drawStick(ctx, pointAt(i, W, H, from, to), false, 0);
             });
 
-            // Pass 3 — invariant point: pink glow + active candlestick.
+            // Pass 3 — hover ring (under invariant so selection wins).
+            if (hoveredI >= 0 && hoveredI !== mostInvariantIdx) {
+              const h = pointAt(hoveredI, W, H, from, to);
+              ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.arc(h.x, h.y, 9, 0, Math.PI * 2);
+              ctx.stroke();
+            }
+
+            // Pass 4 — invariant point: pink glow + active candlestick.
             if (mostInvariantIdx >= 0) {
               const px = pointAt(mostInvariantIdx, W, H, from, to);
               window.deepGlyph.drawGlow(ctx, px, 0);
               window.deepGlyph.drawStick(ctx, px, true, 0);
             }
 
-            // Pass 4 — labels for invariant + unstable.
-            ctx.font = '10px JetBrains Mono, Menlo, monospace';
+            // Pass 5 — labels for invariant + unstable, with unit IDs so
+            // it's clear which sentences are being labelled. Clamped to canvas.
             if (mostInvariantIdx >= 0) {
               const px = pointAt(mostInvariantIdx, W, H, from, to);
-              ctx.fillStyle = 'rgba(255,20,147,1)';
-              ctx.fillText('invariant', px.x + 8, px.y - 6);
+              const id = CURATED_IDS[mostInvariantIdx];
+              drawClampedLabel(`invariant · ${id}`, px.x, px.y, W, H, 'rgba(255,20,147,1)');
             }
             if (mostUnstableIdx >= 0) {
               const px = pointAt(mostUnstableIdx, W, H, from, to);
-              ctx.fillStyle = 'rgba(0,0,0,0.7)';
-              ctx.fillText('unstable', px.x + 8, px.y - 6);
+              const id = CURATED_IDS[mostUnstableIdx];
+              drawClampedLabel(`unstable · ${id}`, px.x, px.y, W, H, 'rgba(0,0,0,0.75)');
             }
           }
+
+          // Mouse → nearest candlestick using DISPLACED positions.
+          function findNearest(mx, my) {
+            if (!LAYOUTS || !PROPS) return -1;
+            const W = canvas.width, H = canvas.height;
+            const from = LAYOUTS[currentSeed];
+            const to   = LAYOUTS[targetSeed];
+            let bestI = -1;
+            let bestD = 14 * 14;
+            for (let i = 0; i < CURATED_IDS.length; i++) {
+              const p = pointAt(i, W, H, from, to);
+              const dx = p.x - mx, dy = p.y - my;
+              const d = dx * dx + dy * dy;
+              if (d < bestD) { bestD = d; bestI = i; }
+            }
+            return bestI;
+          }
+          function escapeHtml(s) {
+            return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+          }
+          canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mx = (e.clientX - rect.left) * (canvas.width  / rect.width);
+            const my = (e.clientY - rect.top)  * (canvas.height / rect.height);
+            const i = findNearest(mx, my);
+            if (i !== hoveredI) {
+              hoveredI = i;
+              if (i < 0 || !TEXTS) {
+                hoverEl.innerHTML = '';
+              } else {
+                const id = CURATED_IDS[i];
+                hoverEl.innerHTML = `<strong>${id}</strong> ${escapeHtml(TEXTS[i] || '(no text)')}`;
+              }
+            }
+          });
+          canvas.addEventListener('mouseleave', () => {
+            if (hoveredI !== -1) {
+              hoveredI = -1;
+              hoverEl.innerHTML = '';
+            }
+          });
 
           // Continuous animation loop — drift on every frame; seed-swap
           // interpolation also advances here. Pause/resume API is exposed
@@ -1290,9 +1359,32 @@ clamped to [2.0, 7.0]</code></pre>
             }
           };
 
-          fetch('../data/embeddings.json').then(r => r.json()).then(embeds => {
+          // Truncate text for stats display (full text shown on hover).
+          function trim(s, n) { return s.length > n ? s.slice(0, n) + '…' : s; }
+
+          // Build the stats line with the actual invariant/unstable sentences
+          // so the reader knows what those points represent.
+          function statsLine(seed) {
+            if (!TEXTS || mostInvariantIdx < 0) {
+              return `seed ${seed} · pink: stays put across all 8 seeds · ink-labeled: wanders the most`;
+            }
+            const invId = CURATED_IDS[mostInvariantIdx];
+            const unsId = CURATED_IDS[mostUnstableIdx];
+            const invText = trim(TEXTS[mostInvariantIdx] || '', 60);
+            const unsText = trim(TEXTS[mostUnstableIdx] || '', 60);
+            return `seed ${seed} · ` +
+              `<strong>invariant ${invId}</strong>: "${invText}" · ` +
+              `<strong>unstable ${unsId}</strong>: "${unsText}"`;
+          }
+
+          Promise.all([
+            fetch('../data/embeddings.json').then(r => r.json()),
+            fetch('../data/manifesto-units.json').then(r => r.json())
+          ]).then(([embeds, units]) => {
             const idToIndex = {};
             embeds.unit_ids_in_order.forEach((id, i) => { idToIndex[id] = i; });
+            const idToText = {};
+            units.units.forEach(u => { idToText[u.id] = u.text; });
 
             // Build LAYOUTS in CURATED_IDS order, one row per seed.
             LAYOUTS = [0, 1, 2, 3, 4, 5, 6, 7].map(seed =>
@@ -1304,6 +1396,8 @@ clamped to [2.0, 7.0]</code></pre>
 
             // Stable candlestick props per curated unit (id-derived).
             PROPS = CURATED_IDS.map(id => window.deepGlyph.propsFor(id));
+            // Text per curated unit for hover-reveal + stats line.
+            TEXTS = CURATED_IDS.map(id => idToText[id] || '');
 
             // Compute per-unit variance across all 8 seeds (sum of x and y variance).
             const variance = CURATED_IDS.map((_, i) => {
@@ -1320,20 +1414,15 @@ clamped to [2.0, 7.0]</code></pre>
               const newSeed = +slider.value;
               seedLabel.textContent = newSeed;
               if (newSeed !== targetSeed) {
-                // Snap currentSeed to whatever rest position is being shown
-                // right now, then start a fresh interpolation toward the new
-                // target. The continuous frame loop picks this up on the next
-                // tick — no need to start animation manually.
                 currentSeed = targetSeed;
                 targetSeed = newSeed;
                 interpAmt = 0;
               }
-              statsEl.innerHTML = `seed ${newSeed} · pink point: stays put across all 8 seeds (real neighborhood) · black-labeled point: wanders the most (projection artifact)`;
+              statsEl.innerHTML = statsLine(newSeed);
             });
 
-            statsEl.innerHTML = `seed 0 · pink point: stays put across all 8 seeds (real neighborhood) · black-labeled point: wanders the most (projection artifact)`;
-            // Kick off the continuous loop. Drift starts immediately; the
-            // candlesticks begin sway-and-drift even before the first slider input.
+            statsEl.innerHTML = statsLine(0);
+            // Kick off the continuous loop.
             lastTs = performance.now();
             raf = requestAnimationFrame(frame);
           }).catch(err => {
@@ -1551,12 +1640,11 @@ clamped to [2.0, 7.0]</code></pre>
           let nextSpawn = 0.5;
           let raf = null;
 
-          // Flare lifetime — long enough for the eye to track one flare's
-          // full lifecycle (spawn, ripple outward, fade). The apparatus's
-          // sky uses 2.5s because the active line is moving every ~3-7s and
-          // each flare needs to fade before the next sentence; this demo
-          // doesn't have that constraint, so we breathe.
-          const FLARE_DURATION = 4.0;
+          // Flare lifetime. Long enough that the eye can watch one flare's
+          // full lifecycle (spawn → ripple outward → fade) without the next
+          // one stomping over it. Apparatus uses 2.5s because the active
+          // line moves on every 3-7s; this demo doesn't have that constraint.
+          const FLARE_DURATION = 6.0;
 
           function activeRate() {
             return KEYWORDS.filter(k => k.included).reduce((acc, k) => acc + k.pct, 0);
@@ -1565,14 +1653,18 @@ clamped to [2.0, 7.0]</code></pre>
             const rate = activeRate();
             if (rate === 0) return;
             flares.push({ x: Math.random() * W, y: Math.random() * H, bornAt: t });
-            // Interval has a real-world reading: each "tick" of demo time
-            // corresponds to roughly one manifesto unit being read, and a
-            // keyword's pct is the probability the current unit contains it.
-            // Flares per second ≈ rate × 0.034 (units/s × pct/100). Floor at
-            // 0.1s so noise stays blurred; ceiling at 30s so a single rare
-            // keyword still fires at least once during a typical demo dwell.
-            const flaresPerSec = Math.max(0.034, rate * 0.034);
-            nextSpawn = t + Math.max(0.1, Math.min(30, 1 / flaresPerSec));
+            // Spawn rate is anchored to the manifesto's reading: each tick
+            // of demo time ≈ one manifesto unit being read, and a keyword's
+            // pct is the probability the current unit contains it. Then
+            // SCALED DOWN to ~0.25× of that (rate × 0.0085) so each flare
+            // gets room to breathe — at the calibrated configuration
+            // (37%, 20 actual triggers on) you see ~1.5 simultaneous flares
+            // and can track each one. Adding 'the'/'is' overwhelms the field.
+            // Floor 0.05 keeps a single rare keyword (1%) from going years
+            // between fires; ceiling 30s keeps it from auto-firing constantly
+            // when nothing is on.
+            const flaresPerSec = Math.max(0.05, rate * 0.0085);
+            nextSpawn = t + Math.max(0.15, Math.min(30, 1 / flaresPerSec));
           }
           function draw() {
             const t = (performance.now() - t0) / 1000;
