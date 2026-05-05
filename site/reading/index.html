@@ -3,13 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <title>Pink Teaming · READING — How the Page Reads</title>
-<meta name="viewport" content="width=1440">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../nav.css">
 <script src="../nav.js" defer></script>
 <style>
+/* ════════════════════════════════════════════════════════════
+   PINK TEAMING — READING page · how the page reads itself
+   - Quietened practice.html typography as base
+   - 2 full-bleed pink panels (title + closing)
+   - Section heads carry a Level eyebrow (No code · One demo · …)
+   - Six embedded interactive demos (segmentation, embedding pair,
+     UMAP eight-seeds, wave interference, keyword pruning,
+     breath pulse)
+   ════════════════════════════════════════════════════════════ */
+
 :root {
   --paper: #fafaf7;
   --ink:   #000000;
@@ -29,6 +39,8 @@ html, body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+
+/* ── FIXED CHROME ─────────────────────────────────────────── */
 
 .chip {
   position: fixed;
@@ -69,30 +81,521 @@ html, body {
   white-space: nowrap;
 }
 
-.placeholder {
-  min-height: 100vh;
+/* The breath pulse — small fixed pink dot. Sits ABOVE the byline-link
+   so the two elements don't overlap. Almost-invisible by design. */
+#breath-pulse {
+  position: fixed;
+  right: 1.6rem;
+  bottom: 4.4rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pink);
+  z-index: 100;
+  pointer-events: none;
+  animation: breath-pulse 8s ease-in-out infinite;
+}
+@keyframes breath-pulse {
+  0%, 100% { transform: scale(0.85); opacity: 0.25; }
+  50%      { transform: scale(1.15); opacity: 0.55; }
+}
+
+/* ── PAGE STRUCTURE ───────────────────────────────────────── */
+
+.doc { position: relative; }
+
+.band {
+  width: 100%;
+  position: relative;
+}
+.band-inner {
+  width: 1080px;
+  max-width: calc(100% - 4rem);
+  margin: 0 auto;
+}
+
+/* ── Pink panel — full-bleed, ink rule top & bottom ──────── */
+.panel-pink {
+  background: var(--pink);
+  color: var(--ink);
+  padding: 8rem 0 8rem;
+  border-top: 1.5px solid var(--ink);
+  border-bottom: 1.5px solid var(--ink);
+}
+.panel-pink:first-child { border-top: 0; }
+
+.panel-pink .marker {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 2.6rem;
+}
+.panel-pink .marker .pip {
+  width: 8px; height: 8px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+.panel-pink .marker .sep {
+  flex: 1; height: 1.5px; background: var(--ink); margin: 0 0.4rem;
+}
+
+.panel-pink .big {
+  font-family: var(--font-sans);
+  font-weight: 900;
+  font-size: clamp(4rem, 7.5vw, 7rem);
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.panel-pink .footer {
+  margin-top: 3.4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* Title panel — eyebrow, big title, no subtitle. */
+.panel-title {
+  padding: 9rem 0 7rem;
+}
+.panel-title .eyebrow {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.7;
+  margin-bottom: 2.4rem;
+}
+.panel-title h1 {
+  font-family: var(--font-sans);
+  font-weight: 900;
+  font-size: clamp(6rem, 12vw, 11rem);
+  line-height: 0.85;
+  letter-spacing: -0.06em;
+  color: var(--ink);
+}
+
+/* Closing panel — single line at moderate scale. */
+.panel-closing .big {
+  font-size: clamp(3rem, 6vw, 5rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+/* ── Cream prose stretches ───────────────────────────────── */
+.stretch {
+  background: var(--paper);
+  padding: 5rem 0;
+}
+.stretch + .stretch { padding-top: 0; }
+
+.stretch .band-inner {
+  width: 720px;
+  max-width: calc(100% - 4rem);
+}
+
+.prose {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 1.125rem;
+  line-height: 1.75;
+  letter-spacing: 0.003em;
+  color: var(--ink);
+  hanging-punctuation: first last;
+  text-wrap: pretty;
+  font-variation-settings: "opsz" 16;
+}
+.prose p { margin-bottom: 1.6em; }
+.prose p + p { text-indent: 1.6em; }
+.prose p.first, .prose p.no-indent { text-indent: 0; }
+.prose em { font-style: italic; }
+.prose strong { font-weight: 600; }
+
+.prose a {
+  color: var(--pink);
+  text-decoration: none;
+  font-weight: 500;
+}
+.prose a:hover { color: var(--ink); }
+
+.prose h3 {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.55rem;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  margin: 2.8rem 0 1.4rem;
+}
+
+.prose pre {
+  margin: 1.6rem 0;
+  padding: 1rem 1.2rem;
+  background: rgba(255, 20, 147, 0.06);
+  border-left: 1.5px solid var(--pink);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--ink);
+  overflow-x: auto;
+  text-indent: 0;
+}
+.prose pre code { font-family: inherit; font-size: inherit; background: none; padding: 0; }
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0.05em 0.35em;
+  border-radius: 2px;
+}
+
+/* ── Section heading — quiet, with a Level eyebrow ───────── */
+.section-head {
+  margin: 4rem 0 2rem;
+  text-align: left;
+}
+.section-head .roman {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.6;
+  margin-bottom: 0.8rem;
+}
+.section-head .label {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 2.4rem;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  display: block;
+}
+.section-head .level {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pink);
+  opacity: 0.85;
+  margin-top: 0.7rem;
+}
+
+/* ── Aside callout — for the > ### sidebar paragraphs in source ── */
+.aside {
+  margin: 2.4rem 0;
+  padding: 1.2rem 1.4rem;
+  border-left: 2.5px solid var(--pink);
+  background: rgba(255, 20, 147, 0.04);
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.aside h4 {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pink);
+  margin-bottom: 0.7rem;
+}
+.aside p {
+  text-indent: 0;
+  margin-bottom: 1em;
+}
+.aside p:last-child { margin-bottom: 0; }
+.aside em { font-style: italic; }
+
+/* ── Demo container — applies to all six interactive demos.
+       Styles taken from the source markdown, lightly normalized. ── */
+.demo {
+  margin: 2.4rem 0;
+  padding: 1.4rem;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+}
+.demo-caption {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 1rem;
+  text-indent: 0;
+}
+.demo-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0.8rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.demo-controls button {
+  all: unset;
+  cursor: pointer;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+.demo-controls button:hover { background: var(--ink); color: var(--paper); }
+.demo-controls button.active {
+  background: var(--pink);
+  color: var(--paper);
+  border-color: var(--pink);
+}
+.demo-controls select {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  flex: 1;
+  min-width: 200px;
+}
+.demo-controls input[type="range"] {
+  flex: 1;
+  accent-color: var(--pink);
+}
+.demo-sliders, .demo-slider {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+  align-items: center;
+}
+.demo-pickers select { flex-basis: 100%; }
+.demo-stats {
+  margin-top: 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: rgba(0, 0, 0, 0.7);
+  letter-spacing: 0.04em;
+  text-indent: 0;
+}
+.demo canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--paper);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+.demo-units {
+  margin: 1rem 0;
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.demo-unit {
+  padding: 0.3rem 0;
+  border-top: 1px dashed rgba(0, 0, 0, 0.15);
+  text-indent: 0;
+}
+.demo-unit:last-child { border-bottom: 1px dashed rgba(0, 0, 0, 0.15); }
+.demo-unit-id {
+  display: inline-block;
+  width: 3.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: rgba(0, 0, 0, 0.5);
+}
+.demo-timeline {
+  display: flex;
+  height: 1.4rem;
+  margin: 0.6rem 0;
+  border: 1px solid var(--ink);
+}
+.demo-tl-segment {
+  border-right: 1px solid var(--ink);
+  background: var(--pink);
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  overflow: hidden;
 }
-.placeholder p {
+.demo-tl-segment:last-child { border-right: 0; }
+.demo-tl-segment:nth-child(even) { background: rgba(255, 20, 147, 0.7); }
+.demo-keywords-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 1rem 0 0.6rem;
+}
+.demo-kw-chip {
+  all: unset;
+  cursor: pointer;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--ink);
+  background: var(--paper);
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+.demo-kw-chip span {
+  color: rgba(0, 0, 0, 0.45);
+  margin-left: 0.4rem;
+}
+.demo-kw-chip.included {
+  background: var(--pink);
+  color: var(--paper);
+  border-color: var(--pink);
+}
+.demo-kw-chip.included span { color: rgba(250, 250, 247, 0.7); }
+
+/* ── Colophon — single-line version stamp ────────────────── */
+.colophon {
+  background: var(--paper);
+  padding: 5rem 0 7rem;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink);
-  opacity: 0.4;
+}
+.colophon .band-inner {
+  width: 1080px;
+  max-width: calc(100% - 4rem);
+  padding-top: 2.4rem;
+  border-top: 1px solid var(--pink);
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  text-align: center;
+}
+.colophon .v { color: var(--pink); }
+
+/* ── Mobile breakpoint — stack demo controls vertically ─── */
+@media (max-width: 700px) {
+  .demo-sliders, .demo-slider { grid-template-columns: 1fr; }
+  .demo-pickers select { min-width: 100%; }
+  .panel-title { padding: 6rem 0 4rem; }
 }
 </style>
 </head>
 <body>
-<div class="chip"><span class="dot"></span>Reading · How the Page Reads</div>
 
-<main class="placeholder">
-  <p>— page in progress —</p>
-</main>
+<div class="doc">
 
-<a class="byline-link" href="https://atmarcus.net" target="_blank" rel="noopener">— Tyro Sageframe</a>
+  <!-- ═══════════════════════════════════════════════════════
+       PANEL 1 / 2 — TITLE
+       ═══════════════════════════════════════════════════════ -->
+  <section class="band panel-pink panel-title">
+    <div class="band-inner">
+      <p class="eyebrow">pinkteaming.net · How it works</p>
+      <h1>How the<br>Page Reads.</h1>
+      <div class="footer">
+        <span>— Tyro Sageframe</span>
+        <span>pinkteaming.net</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Cream stretch: lede + §1 (body in the room) ─────── -->
+  <section class="band stretch">
+    <div class="band-inner">
+      <article class="prose">
+
+        <p class="first no-indent">When you arrive at pinkteaming.net, the page is already reading. The manifesto is moving slowly down the left side of the screen, at the pace a careful reader would take, and there is no way to make it go faster. There are no controls on the wall of the room. The room is moving and you are in it.</p>
+
+        <p>There is some math here. There are some demos you can move with your hands. You don't need any background to start, and you can stop wherever you want.</p>
+
+        <p>Pink teaming sits beside red teaming and mechanistic interpretability as a third practice with its own substrate, and a discipline earns that seat by showing its work. Red teaming has prompts and attack surfaces. Interpretability has weights and feature visualizations. Pink teaming reads patterns of behavior over time across the surface where decisions are made—and the page demonstrates that this can be done with the same kind of technical care: real embeddings, honest projections, documented keyword choices, defensible segmentation. The discipline is not less computational. It is computational in service of durational reading.</p>
+
+        <header class="section-head" id="section-1">
+          <span class="roman">Section 01</span>
+          <span class="label">The body in the room.</span>
+          <span class="level">Level 1 · No code</span>
+        </header>
+
+        <p class="first no-indent">In 1956 Guy Debord coined the term <em>dérive</em>—drift—for a way of walking that refused the routes the city intended. The Situationists were tired of paths from work to home and back. They were tired of an environment that managed encounter. So they walked instead. Without destination. Without itinerary. The route emerged from what the body wanted, what the city offered, what could not have been planned in advance.</p>
+
+        <p>The dérive was not aimless. It was a discipline. Walking against the city's routes meant reading the city—the residual textures, the unsanctioned passages, the moods that gathered at certain corners—and being changed by what you read. <em>Psychogeography</em>, they called it: the study of how a place affects the consciousness moving through it.</p>
+
+        <p>Forty years later, AI arrived with its own intended routes. Type a query. Receive a response. Consume the output. Move on. The interaction is brief, transactional, designed for completion.</p>
+
+        <p>Pink teaming is the dérive turned toward the model. The practitioner walks into the working session with intent but without destination. They notice what the system is doing. They follow textures. They refuse efficient routes. They attend to the moods that gather at certain corners of the model's behavior. They accumulate the place. The model has a psychology. The careful reader builds it up.</p>
+
+        <p>This page is the architecture that gives the reader permission to learn one. The route through the page is fixed; the practice it is recruiting you toward is not. The page walks at its own pace because the discipline begins with the willingness to be walked. If you stay, you have practiced. If you skim, you have not.</p>
+
+        <p>The architecture has already been built. What you are doing now, in the eight minutes the page asks of you, is following the route.</p>
+
+      </article>
+    </div>
+  </section>
+
+  <!-- ═══ Chunks 2–5 will append additional <section class="band stretch"> blocks here:
+           §2 (surface) · §3 (deep) · §4 (sky) · §5 (discipline)
+           a pink panel-closing, the footer-note stretch, and the colophon.
+       ═══ -->
+
+</div>
+
+<!-- ═══ FIXED CHROME — sits above all panels ═══ -->
+
+<div class="chip"><span class="dot"></span>Pink Teaming · A Manifesto</div>
+
+<a class="byline-link" id="byline" href="https://atmarcus.net" target="_blank" rel="noopener">— Tyro Sageframe</a>
+
+<div id="breath-pulse" aria-hidden="true"></div>
+
+<script>
+  // Hide the bottom-right byline whenever the closing panel is in view.
+  // The closing panel is added in chunk 5; until then this no-ops gracefully.
+  (function () {
+    var byline = document.getElementById('byline');
+    function attach() {
+      var closing = document.querySelector('.panel-closing');
+      if (!byline || !closing) return false;
+      byline.style.transition = 'opacity .25s ease';
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          byline.style.opacity = e.isIntersecting ? '0' : '1';
+          byline.style.pointerEvents = e.isIntersecting ? 'none' : 'auto';
+        });
+      }, { threshold: 0.15 });
+      io.observe(closing);
+      return true;
+    }
+    if (!attach()) {
+      window.addEventListener('DOMContentLoaded', attach, { once: true });
+    }
+  })();
+</script>
+
 </body>
 </html>
