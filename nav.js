@@ -328,12 +328,18 @@
   let dragStart = null;
   let posStart = null;
   const MARGIN = 24;
-  // Default position when nothing is in localStorage: dot center at this
-  // many CSS px from the upper-right corner (matches the design screenshot).
-  // Wrapper is var(--nav-container-size) = 220px square; dot is at wrapper
-  // center, so wrapper top-left = (innerWidth - DOT_RIGHT - 110, DOT_TOP - 110).
-  const DEFAULT_DOT_RIGHT = 140;
-  const DEFAULT_DOT_TOP   = 175;
+  // Default position when nothing is in localStorage: dot center is anchored
+  // to the bottom-right corner of the .surface-band (the white reading strip's
+  // lower rule, at the right viewport edge). DOT_RIGHT is px left of that
+  // corner; DOT_ABOVE_SURFACE is px above the surface band's bottom line.
+  // Anchoring to the surface band keeps the dot at a fixed visual offset from
+  // the reading strip across viewport heights, instead of drifting with the
+  // top edge. Wrapper is var(--nav-container-size) = 220px square; dot sits at
+  // wrapper center, so wrapper top-left = (dotX - 110, dotY - 110).
+  // Pages without a .surface-band fall back to the legacy upper-right anchor.
+  const DEFAULT_DOT_RIGHT         = 140;
+  const DEFAULT_DOT_ABOVE_SURFACE = 280;
+  const FALLBACK_DOT_TOP          = 175;
 
   function setPos(x, y) {
     navEl.style.left = x + 'px';
@@ -412,9 +418,17 @@
     } else {
       const halfW = navEl.offsetWidth  / 2;
       const halfH = navEl.offsetHeight / 2;
-      const x = window.innerWidth - DEFAULT_DOT_RIGHT - halfW;
-      const y = DEFAULT_DOT_TOP - halfH;
-      setPos(x, y);
+      const surface = document.querySelector('.surface-band');
+      let dotX, dotY;
+      if (surface) {
+        const r = surface.getBoundingClientRect();
+        dotX = r.right - DEFAULT_DOT_RIGHT;
+        dotY = r.bottom - DEFAULT_DOT_ABOVE_SURFACE;
+      } else {
+        dotX = window.innerWidth - DEFAULT_DOT_RIGHT;
+        dotY = FALLBACK_DOT_TOP;
+      }
+      setPos(dotX - halfW, dotY - halfH);
     }
     renderArms(true);
   }
