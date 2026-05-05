@@ -9,6 +9,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../nav.css">
 <script src="../nav.js" defer></script>
+<script>
+/* Gateway-arrival fade-in. The root gateway sets a one-shot flag in
+   sessionStorage before redirecting here; we read+clear it and add a
+   class to <html>. CSS keys off that class to fade body opacity from
+   0 to 1. Direct visits never see the flag, so they paint normally. */
+(function () {
+  try {
+    if (sessionStorage.getItem('pt.gateway-arrival') === '1') {
+      sessionStorage.removeItem('pt.gateway-arrival');
+      document.documentElement.classList.add('gateway-arrival');
+    }
+  } catch (_) {}
+})();
+</script>
 <style>
 /* ════════════════════════════════════════════════════════════
    PINK TEAMING — TEXT page · canonical v0.19
@@ -37,6 +51,26 @@ html, body {
   font-family: var(--font-serif);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* ── Gateway-arrival fade-in ──────────────────────────────────
+   Only active when /index.html (the gateway) sets the sessionStorage
+   handoff. The chip and nav.js's star carry across from the gateway
+   unchanged — same chip styling, same star orientation+lengths — so
+   they stay fully opaque and the visitor sees no fade on those.
+   What fades in is the prose: .doc (the panels) and the byline link.
+   Direct visits skip all of this. */
+html.gateway-arrival { background: var(--pink); }
+html.gateway-arrival .doc,
+html.gateway-arrival .byline-link {
+  opacity: 0;
+  transition: opacity 1000ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+html.gateway-arrival.faded .doc,
+html.gateway-arrival.faded .byline-link { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  html.gateway-arrival .doc,
+  html.gateway-arrival .byline-link { transition: none; opacity: 1; }
 }
 
 /* ── FIXED CHROME ─────────────────────────────────────────── */
@@ -716,6 +750,22 @@ html, body {
       });
     }, { threshold: 0.15 });
     io.observe(closing);
+  })();
+</script>
+
+<script>
+  // Trigger the gateway-arrival fade. Two rAFs ensure the initial
+  // opacity:0 is committed to a paint before we flip to opacity:1,
+  // otherwise the browser may collapse the change and skip the
+  // transition entirely.
+  (function () {
+    var html = document.documentElement;
+    if (!html.classList.contains('gateway-arrival')) return;
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        html.classList.add('faded');
+      });
+    });
   })();
 </script>
 

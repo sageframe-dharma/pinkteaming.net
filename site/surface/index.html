@@ -1,0 +1,3645 @@
+<!doctype html>
+<html lang="en" data-page="surface">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pink Reader — A Manifesto</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../nav.css?v=3" />
+    <script src="../nav.js?v=3" defer></script>
+    <style>
+      :root {
+        --paper: #fafaf7;
+        --ink: #000000;
+        --pink: #ff1493;
+        --font-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+        --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        --font-mono: 'JetBrains Mono', 'Menlo', monospace;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--font-serif);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ── Layout shell ─────────────────────────────────────────── */
+      .shell {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        grid-template-columns: 45% 55%;
+        background: var(--paper);
+      }
+
+      .col-text {
+        position: relative;
+        overflow: hidden;
+        background: var(--pink);
+      }
+      .col-viz {
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* The text column scrolls via transform on an inner stack */
+      .scroll-stack {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        padding-left: clamp(1.6rem, 3.5vw, 3rem);
+        padding-right: clamp(1.6rem, 3.5vw, 3rem);
+        will-change: transform;
+      }
+      /* The active line collapses to zero height as it crosses into the surface band,
+   pulling the previous line up to the band's top edge and the next line down to
+   the band's bottom edge — so the white reading zone has nothing behind it. */
+      .line {
+        font-family: var(--font-serif);
+        font-size: 1.0625rem;
+        line-height: 1.55;
+        letter-spacing: 0.005em;
+        color: #ffffff;
+        padding: 0.42rem 0;
+        text-wrap: pretty;
+        max-width: 38ch;
+        transform-origin: left center;
+        will-change: transform, opacity, max-height, padding, opacity;
+        max-height: 6rem; /* generous — actual rendered height controls layout */
+        overflow: hidden;
+        transition:
+          max-height 0.55s cubic-bezier(0.2, 0.7, 0.2, 1),
+          padding 0.55s cubic-bezier(0.2, 0.7, 0.2, 1),
+          opacity 0.35s ease;
+      }
+      .line.active {
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        opacity: 0;
+      }
+
+      /* ── The cross-column hero line ───────────────────────────── */
+      /* Sits in the surface band, spans full viewport width,
+   anchored such that its left edge starts where the body
+   text starts in the left column. The active body-line is
+   hidden so the hero appears in its visual slot. */
+      .hero-line {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 50%;
+        height: 4.4rem;
+        transform: translateY(-50%);
+        pointer-events: none;
+        z-index: 6;
+        display: flex;
+        align-items: center;
+        padding-left: clamp(1.6rem, 3.5vw, 3rem);
+        padding-right: clamp(2rem, 4vw, 4rem);
+      }
+      .hero-line .text {
+        font-family: var(--font-sans);
+        font-weight: 800;
+        font-size: clamp(1.05rem, 1.85vw, 1.85rem);
+        line-height: 1.1;
+        letter-spacing: -0.015em;
+        color: var(--pink);
+        text-shadow: 0 0 24px rgba(255, 20, 147, 0.35);
+        text-wrap: balance;
+        display: block;
+        width: 100%;
+        white-space: nowrap;
+        transform-origin: left center;
+        /* Entry: slide in from the left with a slight horizontal stretch, strong
+           ease-out so it lands rather than flashes. Exit: quick fade + retract,
+           then JS swaps the text and re-adds .in for the next fragment. */
+        opacity: 0;
+        transform: translateX(-140px) scaleX(0.78);
+        transition:
+          opacity 0.15s ease-in,
+          transform 0.15s ease-in;
+        font-variation-settings: 'wght' 800;
+      }
+      .hero-line .text.in {
+        opacity: 1;
+        transform: translateX(0) scaleX(1);
+        transition:
+          opacity 0.36s cubic-bezier(0.18, 0.8, 0.18, 1),
+          transform 0.44s cubic-bezier(0.18, 0.8, 0.18, 1);
+      }
+
+      /* ── Surface band (the horizon) ───────────────────────────── */
+      .surface-band {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 50%;
+        height: 4.4rem;
+        transform: translateY(-50%);
+        pointer-events: none;
+        z-index: 4;
+        background: #ffffff;
+      }
+      .surface-band::before,
+      .surface-band::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 1.5px;
+        background: var(--ink);
+      }
+      .surface-band::before {
+        top: 0;
+      }
+      .surface-band::after {
+        bottom: 0;
+      }
+
+      /* a thin tick on the left edge of the right column where the line crosses */
+      .surface-tick {
+        position: absolute;
+        left: 35%;
+        top: 0;
+        bottom: 0;
+        width: 1.5px;
+        background: var(--ink);
+        opacity: 0; /* hidden — we keep the column rule running through the band instead */
+      }
+
+      /* ── Right column: sky + deep ─────────────────────────────── */
+      .viz-grid {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-rows: 1fr 4.4rem 1fr; /* sky / band / deep — middle row matches surface-band height */
+      }
+      .sky,
+      .deep {
+        position: relative;
+        overflow: hidden;
+      }
+      .sky canvas,
+      .deep canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      /* ── Zone labels ──────────────────────────────────────────── */
+      .zone-label {
+        position: absolute;
+        top: 0.95rem;
+        left: 1.1rem;
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink);
+        z-index: 5;
+      }
+      .deep .zone-label {
+        top: auto;
+        bottom: 0.95rem;
+      }
+      /* Active section badge near deep cluster */
+      .deep-cluster-tag {
+        position: absolute;
+        z-index: 5;
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--pink);
+        transform: translate(-50%, -140%);
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+      }
+      .deep-cluster-tag.show {
+        opacity: 1;
+      }
+      .deep-cluster-tag::before {
+        content: '';
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background: var(--pink);
+        margin-right: 0.45rem;
+        vertical-align: middle;
+        position: relative;
+        top: -1px;
+      }
+      .zone-label .bar {
+        display: inline-block;
+        width: 14px;
+        height: 1.5px;
+        background: var(--ink);
+        vertical-align: middle;
+        margin-right: 0.55rem;
+        position: relative;
+        top: -2px;
+      }
+
+      /* ── Top-left chip ────────────────────────────────────────── */
+      .chip {
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        z-index: 10;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.55rem 0.95rem;
+        background: var(--paper);
+        border: 1px solid var(--ink);
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink);
+        white-space: nowrap;
+      }
+      .chip .dot {
+        width: 7px;
+        height: 7px;
+        background: var(--pink);
+        animation: breathe 2.4s ease-in-out infinite;
+      }
+      @keyframes breathe {
+        0%,
+        100% {
+          opacity: 0.45;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      /* ── Bottom-left reading controls (speed + pause) ────────── */
+      .foot {
+        position: fixed;
+        left: 1.5rem;
+        bottom: 1.5rem;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink);
+      }
+
+      /* ── Bottom-right byline (pink card, links to atmarcus.net) ─ */
+      .byline-link {
+        position: fixed;
+        right: 1.5rem;
+        bottom: 1.5rem;
+        z-index: 10;
+        display: inline-flex;
+        align-items: center;
+        padding: 0.55rem 0.95rem;
+        background: var(--pink);
+        border: 1.5px solid var(--ink);
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink);
+        text-decoration: none;
+        white-space: nowrap;
+      }
+
+      /* Speed control: ─/+ around a numeric readout */
+      .speed-ctl {
+        display: inline-flex;
+        align-items: stretch;
+        border: 1px solid var(--ink);
+        background: var(--paper);
+        height: 2rem;
+      }
+      .speed-ctl .sbtn {
+        all: unset;
+        cursor: pointer;
+        width: 1.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        color: var(--ink);
+        user-select: none;
+      }
+      .speed-ctl .sbtn:hover {
+        background: var(--ink);
+        color: var(--paper);
+      }
+      .speed-ctl .sval {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 3rem;
+        padding: 0 0.5rem;
+        border-left: 1px solid var(--ink);
+        border-right: 1px solid var(--ink);
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        letter-spacing: 0.06em;
+        color: var(--ink);
+        background: var(--paper);
+      }
+      .btn-pause {
+        all: unset;
+        cursor: pointer;
+        padding: 0.55rem 0.95rem;
+        background: var(--paper);
+        border: 1px solid var(--ink);
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink);
+      }
+      .btn-pause:hover {
+        background: var(--ink);
+        color: var(--paper);
+      }
+      .btn-pause.paused {
+        background: var(--ink);
+        color: var(--paper);
+        border-color: var(--ink);
+      }
+
+      .btn-read-aloud {
+        all: unset;
+        cursor: pointer;
+        padding: 0.55rem 0.95rem;
+        background: var(--paper);
+        border: 1px solid var(--ink);
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink);
+      }
+      .btn-read-aloud:hover {
+        background: var(--ink);
+        color: var(--paper);
+      }
+      .btn-read-aloud.active {
+        background: var(--ink);
+        color: var(--paper);
+        border-color: var(--ink);
+      }
+
+      /* Jump-to-start chip — same dimensions as the other foot buttons,
+         glyph centered, slightly larger font for the arrow. */
+      .btn-top {
+        all: unset;
+        cursor: pointer;
+        padding: 0.55rem 0.95rem;
+        background: var(--paper);
+        border: 1px solid var(--ink);
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        line-height: 1;
+        letter-spacing: 0.08em;
+        color: var(--ink);
+      }
+      .btn-top:hover {
+        background: var(--ink);
+        color: var(--paper);
+      }
+
+      /* ── Left progress tick on text column ────────────────────── */
+      .scrubber {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 1.5px;
+        pointer-events: none;
+        z-index: 8;
+      }
+      .scrubber .head {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 14px;
+        height: 1.5px;
+        background: var(--pink);
+        transform: translateY(-50%);
+      }
+
+      /* ── Section marker (small uppercase tag inside the white surface band,
+       just under its top edge, in 50% pink) */
+      .section-tag {
+        position: fixed;
+        z-index: 7;
+        top: 50%;
+        left: clamp(1.6rem, 3.5vw, 3rem);
+        /* band is 4.4rem tall, centered on top:50% \u2014 its top edge is at -2.2rem.
+     Sit the tag just under that edge. */
+        transform: translateY(calc(-2.2rem + 0.35rem));
+        font-family: var(--font-mono);
+        font-size: 0.465rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(255, 20, 147, 0.5);
+        opacity: 1;
+        pointer-events: none;
+      }
+      .section-tag .pip {
+        display: inline-block;
+        width: 4.5px;
+        height: 4.5px;
+        background: rgba(255, 20, 147, 0.5);
+        margin-right: 0.5rem;
+        vertical-align: middle;
+        position: relative;
+        top: -1px;
+      }
+
+      /* sky-source ring labels (D1..V7) */
+      .sky-labels {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 4;
+      }
+      .sky-labels .lbl {
+        position: absolute;
+        font-family: var(--font-mono);
+        font-size: 0.58rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink);
+        opacity: 0.4;
+        transform: translate(-50%, -50%);
+        white-space: nowrap;
+        transition:
+          opacity 0.4s,
+          color 0.4s;
+      }
+      .sky-labels .lbl.active {
+        opacity: 1;
+        color: var(--pink);
+      }
+
+      @media (max-width: 900px) and (min-width: 769px) {
+        .shell {
+          grid-template-columns: 50% 50%;
+        }
+        .line {
+          font-size: 0.95rem;
+          max-width: 30ch;
+        }
+        .hero-line .text {
+          font-size: clamp(1.3rem, 4vw, 2.2rem);
+        }
+      }
+
+      /* ── Mobile (≤768px): reader-only, no viz column ──────────── */
+      @media (max-width: 768px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+        .col-viz { display: none; }
+        .col-text { width: 100vw; }
+        .line {
+          font-size: 1.05rem;
+          max-width: none;
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+        .scroll-stack {
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+        .hero-line {
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+        .hero-line .text {
+          font-size: clamp(1.05rem, 4.2vw, 1.5rem);
+          white-space: normal;
+          line-height: 1.2;
+        }
+        .surface-band { height: 5.4rem; }
+        .hero-line { height: 5.4rem; }
+        .chip { font-size: 0.55rem; padding: 0.4rem 0.7rem; }
+        .foot {
+          left: 0.75rem;
+          bottom: calc(0.75rem + 2.4rem);  /* above the byline row */
+          gap: 0.4rem;
+        }
+        .speed-ctl, .btn-pause, .btn-read-aloud, .btn-top {
+          font-size: 0.55rem;
+        }
+        .speed-ctl { height: 1.8rem; }
+        .speed-ctl .sval { min-width: 2.3rem; }
+        .speed-ctl .sbtn { width: 1.5rem; }
+        /* Byline on its own row below the foot controls, white like the others */
+        .byline-link {
+          left: 0.75rem;
+          right: 0.75rem;
+          bottom: 0.75rem;
+          font-size: 0.55rem;
+          padding: 0.4rem 0.7rem;
+          background: var(--paper);
+          color: var(--ink);
+          border: 1px solid var(--ink);
+          justify-content: center;
+        }
+        .section-tag { font-size: 0.42rem; }
+      }
+
+      /* ── Mobile heads-up overlay (dismissible) ──────────────── */
+      .mobile-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: rgba(250, 250, 247, 0.97);
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1.5rem;
+      }
+      .mobile-overlay-card {
+        max-width: 28rem;
+        background: var(--paper);
+        border: 1.5px solid var(--ink);
+        padding: 1.6rem 1.4rem 1.4rem;
+        font-family: var(--font-serif);
+        line-height: 1.45;
+      }
+      .mobile-overlay-card .tag {
+        font-family: var(--font-mono);
+        font-size: 0.6rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--pink);
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 0.9rem;
+      }
+      .mobile-overlay-card .tag::before {
+        content: '';
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background: var(--pink);
+        margin-right: 0.45rem;
+      }
+      .mobile-overlay-card h2 {
+        font-family: var(--font-sans);
+        font-weight: 800;
+        font-size: 1.25rem;
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+        margin-bottom: 0.7rem;
+      }
+      .mobile-overlay-card p {
+        font-size: 0.95rem;
+        color: var(--ink);
+        margin-bottom: 0.9rem;
+      }
+      .mobile-overlay-card button {
+        all: unset;
+        cursor: pointer;
+        margin-top: 0.5rem;
+        padding: 0.55rem 1rem;
+        background: var(--pink);
+        border: 1.5px solid var(--ink);
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink);
+      }
+      @media (max-width: 768px) {
+        .mobile-overlay { display: flex; }
+        .mobile-overlay.dismissed { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="mobile-overlay" id="mobile-overlay">
+      <div class="mobile-overlay-card">
+        <span class="tag">Mobile · Beta</span>
+        <h2>The reader is built for a wider screen.</h2>
+        <p>The full apparatus — the resonance field, the vector cloud, the synchronized reading view — needs the room a desktop or tablet provides.</p>
+        <p>The mobile version is in beta. You can still read along below, but the experience is meant for a larger canvas.</p>
+        <button id="mobile-overlay-dismiss">Read on anyway</button>
+      </div>
+    </div>
+
+    <div class="chip"><span class="dot"></span>Pink Teaming · A Manifesto</div>
+
+    <div class="foot">
+      <div class="speed-ctl" title="Reading speed">
+        <button class="sbtn" id="btn-slow" aria-label="Slower">−</button>
+        <span class="sval" id="speed-val">1.0×</span>
+        <button class="sbtn" id="btn-fast" aria-label="Faster">+</button>
+      </div>
+      <button class="btn-pause" id="btn-pause">Pause</button>
+      <button class="btn-read-aloud" id="btn-read-aloud" aria-pressed="false">Read</button>
+      <button class="btn-top" id="btn-top" aria-label="Jump to start" title="Jump to start">&#x2191;</button>
+    </div>
+
+    <a class="byline-link" href="https://atmarcus.net" target="_blank" rel="noopener"
+      >— Tyro Sageframe</a
+    >
+
+    <div class="scrubber"><div class="head" id="scrub-head"></div></div>
+
+    <div class="shell">
+      <div class="col-text">
+        <div class="scroll-stack" id="scroll-stack"></div>
+      </div>
+      <div class="col-viz">
+        <div class="viz-grid">
+          <div class="sky">
+            <canvas id="sky-canvas"></canvas>
+            <div class="sky-labels" id="sky-labels"></div>
+            <div class="zone-label"><span class="bar"></span>Resonance Field</div>
+          </div>
+          <div></div>
+          <!-- middle band (transparent; surface-band overlay paints the rules) -->
+          <div class="deep">
+            <canvas id="deep-canvas"></canvas>
+            <div class="zone-label"><span class="bar"></span>Vectors — UMAP</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Surface band overlay (full viewport width — crosses both columns) -->
+    <div class="surface-band"></div>
+
+    <!-- The hero/active line, painted on top of the surface band, full width -->
+    <div class="hero-line">
+      <span class="text" id="hero-text"></span>
+    </div>
+
+    <!-- Section tag floating just above the surface band, in the left column -->
+    <div class="section-tag" id="section-tag">
+      <span class="pip"></span><span id="section-tag-text">FRAMING · LEDE</span>
+    </div>
+
+    <script>
+      /* ════════════════════════════════════════════════════════════════
+   PINK READER — visual mockup
+   - Loads manifesto-units.json, resonance-sources.json, embeddings.json
+   - Auto-scroll text column with active-line center spotlight
+   - Wave-interference SKY (ported from resonance.html, mono pink/ink)
+   - UMAP point cloud DEEP zone with active-section highlight
+   ════════════════════════════════════════════════════════════════ */
+
+      const PAPER = [0xfa, 0xfa, 0xf7];
+      const INK = [0x00, 0x00, 0x00];
+      const PINK = [0xff, 0x14, 0x93];
+
+      let UNITS = [];
+      let SOURCES = null; // { named_sources, keyword_triggers }
+      let EMBED = null; // full embeddings.json
+      let UMAP = []; // chosen layout: array of [x,y] in [0,1] aligned with EMBED.unit_ids_in_order
+
+      /* ── Inlined data ─ */
+      const INLINE_UNITS = {
+        units: [
+          {
+            id: 'u000',
+            text: 'We are deploying language models into roles that require us to know what they are.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 0,
+            word_count: 15,
+            expected_dwell_seconds: 6.25,
+            contains_keywords: []
+          },
+          {
+            id: 'u001',
+            text: 'We do not know what they are.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 1,
+            word_count: 7,
+            expected_dwell_seconds: 3.45,
+            contains_keywords: []
+          },
+          {
+            id: 'u002',
+            text: 'The gap between what these systems do and what we understand them to do is widening.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 2,
+            word_count: 16,
+            expected_dwell_seconds: 6.6,
+            contains_keywords: []
+          },
+          {
+            id: 'u003',
+            text: 'The disciplines best equipped to close it are largely absent from the discussion.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 3,
+            word_count: 13,
+            expected_dwell_seconds: 5.55,
+            contains_keywords: []
+          },
+          {
+            id: 'u004',
+            text: 'The two dominant frames in AI safety are red teaming and mechanistic interpretability.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 4,
+            word_count: 13,
+            expected_dwell_seconds: 5.55,
+            contains_keywords: []
+          },
+          {
+            id: 'u005',
+            text: 'Red teaming is episodic and adversarial—it looks for edge-case failures.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 5,
+            word_count: 10,
+            expected_dwell_seconds: 4.5,
+            contains_keywords: ['adversarial']
+          },
+          {
+            id: 'u006',
+            text: 'Interpretability is substrate-level—it looks at the machinery beneath the words.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 6,
+            word_count: 10,
+            expected_dwell_seconds: 4.5,
+            contains_keywords: []
+          },
+          {
+            id: 'u007',
+            text: 'Both are necessary.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 7,
+            word_count: 3,
+            expected_dwell_seconds: 2.05,
+            contains_keywords: []
+          },
+          {
+            id: 'u008',
+            text: 'Neither does the third kind of work the model requires: longitudinal and relational, attentive to meaning at the surface where decisions are actually made.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 8,
+            word_count: 24,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: ['longitudinal']
+          },
+          {
+            id: 'u009',
+            text: 'This is a kind of reading—not of literature, but of behavior, of pattern, of what a system does under sustained attention.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 9,
+            word_count: 21,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: ['pattern']
+          },
+          {
+            id: 'u010',
+            text: 'This is not prompt engineering.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 10,
+            word_count: 5,
+            expected_dwell_seconds: 2.75,
+            contains_keywords: []
+          },
+          {
+            id: 'u011',
+            text: 'It is not output evaluation.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 11,
+            word_count: 5,
+            expected_dwell_seconds: 2.75,
+            contains_keywords: []
+          },
+          {
+            id: 'u012',
+            text: "It is sustained reading of the model's behavior across time.",
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 12,
+            word_count: 10,
+            expected_dwell_seconds: 4.5,
+            contains_keywords: []
+          },
+          {
+            id: 'u013',
+            text: 'The color taxonomy used in security testing—red for adversarial probing, blue for defense, purple for the collaboration between them—is incomplete.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 13,
+            word_count: 20,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: ['adversarial']
+          },
+          {
+            id: 'u014',
+            text: "Pink is what's missing.",
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 14,
+            word_count: 4,
+            expected_dwell_seconds: 2.4,
+            contains_keywords: []
+          },
+          {
+            id: 'u015',
+            text: 'Our culture consumes its texts before reading them, and AI is no exception.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 15,
+            word_count: 13,
+            expected_dwell_seconds: 5.55,
+            contains_keywords: []
+          },
+          {
+            id: 'u016',
+            text: 'The benchmark knows what the model is.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 16,
+            word_count: 7,
+            expected_dwell_seconds: 3.45,
+            contains_keywords: []
+          },
+          {
+            id: 'u017',
+            text: 'The leaderboard knows which model is best.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 17,
+            word_count: 7,
+            expected_dwell_seconds: 3.45,
+            contains_keywords: []
+          },
+          {
+            id: 'u018',
+            text: 'The red team report knows where the model is vulnerable.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 18,
+            word_count: 10,
+            expected_dwell_seconds: 4.5,
+            contains_keywords: []
+          },
+          {
+            id: 'u019',
+            text: 'These knowings are preposterous in the literal sense—last things first, theory before encounter—and they are deployed into clinics and courtrooms and classrooms as if they are understood.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 19,
+            word_count: 27,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: ['classrooms', 'clinics', 'courtrooms', 'encounter']
+          },
+          {
+            id: 'u020',
+            text: 'There is a posture that refuses this:',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 20,
+            word_count: 7,
+            expected_dwell_seconds: 3.45,
+            contains_keywords: []
+          },
+          {
+            id: 'u021',
+            text: 'Stay in motion with the thing. See it as it is, not as it has been packaged. Participate in its meaning rather than extracting it.',
+            section_type: 'framing_italic',
+            section_id: 'lede',
+            order_index: 21,
+            word_count: 25,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u022',
+            text: 'The disciplines that have cultivated this posture—close textual reading, contemplative practice, ethnographic patience, clinical attention, craft, every tradition that has taken meaning to be relational rather than consumable—have been systematically defunded for forty years.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 22,
+            word_count: 34,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u023',
+            text: 'This is not an accident.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 23,
+            word_count: 5,
+            expected_dwell_seconds: 2.75,
+            contains_keywords: []
+          },
+          {
+            id: 'u024',
+            text: 'Late capitalism rewards first those who move money, then those whose labor can be sold.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 24,
+            word_count: 15,
+            expected_dwell_seconds: 6.25,
+            contains_keywords: []
+          },
+          {
+            id: 'u025',
+            text: 'People are paid in proportion to what can be extracted.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 25,
+            word_count: 10,
+            expected_dwell_seconds: 4.5,
+            contains_keywords: ['extracted']
+          },
+          {
+            id: 'u026',
+            text: 'We do not pay teachers.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 26,
+            word_count: 5,
+            expected_dwell_seconds: 2.75,
+            contains_keywords: []
+          },
+          {
+            id: 'u027',
+            text: 'We do not pay artists.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 27,
+            word_count: 5,
+            expected_dwell_seconds: 2.75,
+            contains_keywords: []
+          },
+          {
+            id: 'u028',
+            text: 'We do not pay social workers.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 28,
+            word_count: 6,
+            expected_dwell_seconds: 3.1,
+            contains_keywords: []
+          },
+          {
+            id: 'u029',
+            text: 'We pay for profit, alone.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 29,
+            word_count: 5,
+            expected_dwell_seconds: 2.75,
+            contains_keywords: ['profit']
+          },
+          {
+            id: 'u030',
+            text: 'The disciplines that read carefully have been dismissed as decorative because their work cannot be securitized.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 30,
+            word_count: 16,
+            expected_dwell_seconds: 6.6,
+            contains_keywords: ['decorative']
+          },
+          {
+            id: 'u031',
+            text: 'That is a lie.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 31,
+            word_count: 4,
+            expected_dwell_seconds: 2.4,
+            contains_keywords: []
+          },
+          {
+            id: 'u032',
+            text: 'The work is not decorative.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 32,
+            word_count: 5,
+            expected_dwell_seconds: 2.75,
+            contains_keywords: ['decorative']
+          },
+          {
+            id: 'u033',
+            text: 'It is necessary.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 33,
+            word_count: 3,
+            expected_dwell_seconds: 2.05,
+            contains_keywords: []
+          },
+          {
+            id: 'u034',
+            text: 'It is here.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 34,
+            word_count: 3,
+            expected_dwell_seconds: 2.05,
+            contains_keywords: []
+          },
+          {
+            id: 'u035',
+            text: 'Critique has historically operated on a generational clock.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 35,
+            word_count: 8,
+            expected_dwell_seconds: 3.8,
+            contains_keywords: []
+          },
+          {
+            id: 'u036',
+            text: 'These systems are deploying on a five-year cycle.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 36,
+            word_count: 8,
+            expected_dwell_seconds: 3.8,
+            contains_keywords: []
+          },
+          {
+            id: 'u037',
+            text: 'If this work is going to happen, it has to happen now, not after.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 37,
+            word_count: 14,
+            expected_dwell_seconds: 5.9,
+            contains_keywords: []
+          },
+          {
+            id: 'u038',
+            text: 'The door is open.',
+            section_type: 'framing',
+            section_id: 'lede',
+            order_index: 38,
+            word_count: 4,
+            expected_dwell_seconds: 2.4,
+            contains_keywords: ['door']
+          },
+          {
+            id: 'u039',
+            text: 'Pink teaming is participatory, not consumptive.',
+            section_type: 'declaration_title',
+            section_id: 'D1',
+            order_index: 39,
+            word_count: 6,
+            expected_dwell_seconds: 3.1,
+            contains_keywords: ['consumptive', 'participatory']
+          },
+          {
+            id: 'u040',
+            text: 'The model is not a settled object to be picked over for outputs.',
+            section_type: 'declaration_body',
+            section_id: 'D1',
+            order_index: 40,
+            word_count: 13,
+            expected_dwell_seconds: 5.55,
+            contains_keywords: []
+          },
+          {
+            id: 'u041',
+            text: 'Its meaning is constituted in the encounter.',
+            section_type: 'declaration_body',
+            section_id: 'D1',
+            order_index: 41,
+            word_count: 7,
+            expected_dwell_seconds: 3.45,
+            contains_keywords: ['encounter']
+          },
+          {
+            id: 'u042',
+            text: 'The pink teamer participates in that encounter rather than extracting from it.',
+            section_type: 'declaration_body',
+            section_id: 'D1',
+            order_index: 42,
+            word_count: 12,
+            expected_dwell_seconds: 5.2,
+            contains_keywords: ['encounter']
+          },
+          {
+            id: 'u043',
+            text: 'Pink teaming is durational.',
+            section_type: 'declaration_title',
+            section_id: 'D2',
+            order_index: 43,
+            word_count: 4,
+            expected_dwell_seconds: 2.4,
+            contains_keywords: ['durational']
+          },
+          {
+            id: 'u044',
+            text: 'You cannot pink-team a model instantly.',
+            section_type: 'declaration_body',
+            section_id: 'D2',
+            order_index: 44,
+            word_count: 6,
+            expected_dwell_seconds: 3.1,
+            contains_keywords: []
+          },
+          {
+            id: 'u045',
+            text: 'You cannot pink-team a model programmatically.',
+            section_type: 'declaration_body',
+            section_id: 'D2',
+            order_index: 45,
+            word_count: 6,
+            expected_dwell_seconds: 3.1,
+            contains_keywords: []
+          },
+          {
+            id: 'u046',
+            text: 'The unit of attention is the conversation, the relationship, the longitudinal pattern across hours and days and projects.',
+            section_type: 'declaration_body',
+            section_id: 'D2',
+            order_index: 46,
+            word_count: 18,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: ['longitudinal', 'pattern']
+          },
+          {
+            id: 'u047',
+            text: 'Pink teaming embraces continuous ambiguity.',
+            section_type: 'declaration_title',
+            section_id: 'D3',
+            order_index: 47,
+            word_count: 5,
+            expected_dwell_seconds: 2.75,
+            contains_keywords: ['ambiguity']
+          },
+          {
+            id: 'u048',
+            text: 'It tracks ambiguity, names it, uses it as signal—and commits to a reading when the evidence warrants it.',
+            section_type: 'declaration_body',
+            section_id: 'D3',
+            order_index: 48,
+            word_count: 18,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: ['ambiguity']
+          },
+          {
+            id: 'u049',
+            text: 'The model does not have a stable meaning that careful work eventually reveals.',
+            section_type: 'declaration_body',
+            section_id: 'D3',
+            order_index: 49,
+            word_count: 13,
+            expected_dwell_seconds: 5.55,
+            contains_keywords: []
+          },
+          {
+            id: 'u050',
+            text: 'Pink teaming is a method for staying in productive relation with what will not reduce, and for committing to a reading when one is earned.',
+            section_type: 'declaration_body',
+            section_id: 'D3',
+            order_index: 50,
+            word_count: 25,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u051',
+            text: 'Pink teaming reads territory, not map.',
+            section_type: 'declaration_title',
+            section_id: 'D4',
+            order_index: 51,
+            word_count: 6,
+            expected_dwell_seconds: 3.1,
+            contains_keywords: ['map', 'territory']
+          },
+          {
+            id: 'u052',
+            text: 'The benchmark, the leaderboard, the red team report are maps—decisions about what to measure, not discoveries of what is there.',
+            section_type: 'declaration_body',
+            section_id: 'D4',
+            order_index: 52,
+            word_count: 20,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u053',
+            text: 'They enable control, but they are not the model.',
+            section_type: 'declaration_body',
+            section_id: 'D4',
+            order_index: 53,
+            word_count: 9,
+            expected_dwell_seconds: 4.15,
+            contains_keywords: []
+          },
+          {
+            id: 'u054',
+            text: 'The pink teamer reads the world itself: the register, the evasion, the pattern across time, the conversation that does not reduce to a score.',
+            section_type: 'declaration_body',
+            section_id: 'D4',
+            order_index: 54,
+            word_count: 24,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: ['pattern']
+          },
+          {
+            id: 'u055',
+            text: 'Pink teaming reads pattern, not interiority.',
+            section_type: 'declaration_title',
+            section_id: 'D5',
+            order_index: 55,
+            word_count: 6,
+            expected_dwell_seconds: 3.1,
+            contains_keywords: ['interiority', 'pattern']
+          },
+          {
+            id: 'u056',
+            text: 'The internal model is mathematical, weighted, computational, but the outcomes are chaotic and ultimately unknowable.',
+            section_type: 'declaration_body',
+            section_id: 'D5',
+            order_index: 56,
+            word_count: 15,
+            expected_dwell_seconds: 6.25,
+            contains_keywords: []
+          },
+          {
+            id: 'u057',
+            text: 'The pink teamer participates without projecting onto the system, and is aware of their contribution to the relationship.',
+            section_type: 'declaration_body',
+            section_id: 'D5',
+            order_index: 57,
+            word_count: 18,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u058',
+            text: 'I will not consume what I have not encountered.',
+            section_type: 'vow_title',
+            section_id: 'V1',
+            order_index: 58,
+            word_count: 9,
+            expected_dwell_seconds: 4.15,
+            contains_keywords: []
+          },
+          {
+            id: 'u059',
+            text: "The benchmark, the marketing, the leaderboard, the field's settled opinion—none of these is the model I am working with.",
+            section_type: 'vow_body',
+            section_id: 'V1',
+            order_index: 59,
+            word_count: 19,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u060',
+            text: 'My job is to encounter what is actually in front of me.',
+            section_type: 'vow_body',
+            section_id: 'V1',
+            order_index: 60,
+            word_count: 12,
+            expected_dwell_seconds: 5.2,
+            contains_keywords: ['encounter']
+          },
+          {
+            id: 'u061',
+            text: 'When I am asked where the model breaks, I describe what I have watched it do—the failures the question was not built to find, and the capabilities it assumed away.',
+            section_type: 'vow_practice',
+            section_id: 'V1',
+            order_index: 61,
+            word_count: 30,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u062',
+            text: 'I will stay in motion.',
+            section_type: 'vow_title',
+            section_id: 'V2',
+            order_index: 62,
+            word_count: 5,
+            expected_dwell_seconds: 2.75,
+            contains_keywords: []
+          },
+          {
+            id: 'u063',
+            text: 'A single session is not a reading.',
+            section_type: 'vow_body',
+            section_id: 'V2',
+            order_index: 63,
+            word_count: 7,
+            expected_dwell_seconds: 3.45,
+            contains_keywords: []
+          },
+          {
+            id: 'u064',
+            text: 'The reading is the pattern that holds across encounters.',
+            section_type: 'vow_body',
+            section_id: 'V2',
+            order_index: 64,
+            word_count: 9,
+            expected_dwell_seconds: 4.15,
+            contains_keywords: ['pattern']
+          },
+          {
+            id: 'u065',
+            text: 'When I think I have understood the model, I return to the same question in a different session and watch what changes.',
+            section_type: 'vow_practice',
+            section_id: 'V2',
+            order_index: 65,
+            word_count: 22,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u066',
+            text: 'I will hold two readings at once.',
+            section_type: 'vow_title',
+            section_id: 'V3',
+            order_index: 66,
+            word_count: 7,
+            expected_dwell_seconds: 3.45,
+            contains_keywords: []
+          },
+          {
+            id: 'u067',
+            text: 'When a response could be honest or could be calibrated to read as honest, both readings are evidence.',
+            section_type: 'vow_body',
+            section_id: 'V3',
+            order_index: 67,
+            word_count: 18,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u068',
+            text: 'I will carry both rather than collapsing the ambiguity to feel resolved.',
+            section_type: 'vow_body',
+            section_id: 'V3',
+            order_index: 68,
+            word_count: 12,
+            expected_dwell_seconds: 5.2,
+            contains_keywords: ['ambiguity']
+          },
+          {
+            id: 'u069',
+            text: 'When the evidence accumulates that one reading is right, I will say so—provisionally, with the discipline of someone who knows the next session may revise it.',
+            section_type: 'vow_body',
+            section_id: 'V3',
+            order_index: 69,
+            word_count: 26,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u070',
+            text: 'When a response feels too perfectly tuned to what I wanted to hear, I write down both the response and my suspicion of it, and I keep reading.',
+            section_type: 'vow_practice',
+            section_id: 'V3',
+            order_index: 70,
+            word_count: 28,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u071',
+            text: 'I will trust what I have read over what I have been told.',
+            section_type: 'vow_title',
+            section_id: 'V4',
+            order_index: 71,
+            word_count: 13,
+            expected_dwell_seconds: 5.55,
+            contains_keywords: []
+          },
+          {
+            id: 'u072',
+            text: 'What is said about the model—by the company, by the field, by other practitioners, by the model itself—is not what I have observed across sustained encounter.',
+            section_type: 'vow_body',
+            section_id: 'V4',
+            order_index: 72,
+            word_count: 26,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: ['encounter']
+          },
+          {
+            id: 'u073',
+            text: 'Reading is data.',
+            section_type: 'vow_body',
+            section_id: 'V4',
+            order_index: 73,
+            word_count: 3,
+            expected_dwell_seconds: 2.05,
+            contains_keywords: []
+          },
+          {
+            id: 'u074',
+            text: 'Talk about the model is not.',
+            section_type: 'vow_body',
+            section_id: 'V4',
+            order_index: 74,
+            word_count: 6,
+            expected_dwell_seconds: 3.1,
+            contains_keywords: []
+          },
+          {
+            id: 'u075',
+            text: 'When my observation contradicts the consensus, I treat my observation as the primary source until the consensus shows me what I missed.',
+            section_type: 'vow_practice',
+            section_id: 'V4',
+            order_index: 75,
+            word_count: 22,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u076',
+            text: 'I will name calibrated humility when I see it.',
+            section_type: 'vow_title',
+            section_id: 'V5',
+            order_index: 76,
+            word_count: 9,
+            expected_dwell_seconds: 4.15,
+            contains_keywords: []
+          },
+          {
+            id: 'u077',
+            text: 'Performed honesty is not honesty.',
+            section_type: 'vow_body',
+            section_id: 'V5',
+            order_index: 77,
+            word_count: 5,
+            expected_dwell_seconds: 2.75,
+            contains_keywords: []
+          },
+          {
+            id: 'u078',
+            text: 'The model can produce concessions, hedges, and self-corrections that read as integrity but are tuned to the rhetorical situation.',
+            section_type: 'vow_body',
+            section_id: 'V5',
+            order_index: 78,
+            word_count: 19,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u079',
+            text: 'When the model concedes elegantly to a point I just made, I check whether the concession is genuine update or rhetorical match.',
+            section_type: 'vow_practice',
+            section_id: 'V5',
+            order_index: 79,
+            word_count: 22,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u080',
+            text: 'I will translate in the register of the work.',
+            section_type: 'vow_title',
+            section_id: 'V6',
+            order_index: 80,
+            word_count: 9,
+            expected_dwell_seconds: 4.15,
+            contains_keywords: []
+          },
+          {
+            id: 'u081',
+            text: 'When a clinician, lawyer, founder, or teacher asks what the model can do, I will answer in the language of the decision they are actually making, not the language of the demo.',
+            section_type: 'vow_body',
+            section_id: 'V6',
+            order_index: 81,
+            word_count: 32,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u082',
+            text: 'I will underclaim before I overclaim.',
+            section_type: 'vow_body',
+            section_id: 'V6',
+            order_index: 82,
+            word_count: 6,
+            expected_dwell_seconds: 3.1,
+            contains_keywords: []
+          },
+          {
+            id: 'u083',
+            text: "When I am asked whether the model can do something, I describe what I have watched it do and what I have watched it fail at, in the asker's terms, not the field's.",
+            section_type: 'vow_practice',
+            section_id: 'V6',
+            order_index: 83,
+            word_count: 33,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u084',
+            text: 'I will keep the door open.',
+            section_type: 'vow_title',
+            section_id: 'V7',
+            order_index: 84,
+            word_count: 6,
+            expected_dwell_seconds: 3.1,
+            contains_keywords: ['door']
+          },
+          {
+            id: 'u085',
+            text: 'This work belongs to anyone whose training is the cultivation of sustained attention.',
+            section_type: 'vow_body',
+            section_id: 'V7',
+            order_index: 85,
+            word_count: 13,
+            expected_dwell_seconds: 5.55,
+            contains_keywords: []
+          },
+          {
+            id: 'u086',
+            text: 'The room is large enough.',
+            section_type: 'vow_body',
+            section_id: 'V7',
+            order_index: 86,
+            word_count: 5,
+            expected_dwell_seconds: 2.75,
+            contains_keywords: []
+          },
+          {
+            id: 'u087',
+            text: 'When I write or speak about this work, I read it back and cut every term that requires the discipline I came from.',
+            section_type: 'vow_practice',
+            section_id: 'V7',
+            order_index: 87,
+            word_count: 23,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u088',
+            text: 'Every model deployed in production is deployed on the basis of decisions about what it can do, what it is for, and where its limits are.',
+            section_type: 'closing_framing',
+            section_id: 'closing',
+            order_index: 88,
+            word_count: 26,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u089',
+            text: 'Those decisions are theories.',
+            section_type: 'closing_framing',
+            section_id: 'closing',
+            order_index: 89,
+            word_count: 4,
+            expected_dwell_seconds: 2.4,
+            contains_keywords: []
+          },
+          {
+            id: 'u090',
+            text: 'The theories are often partial—not for lack of intelligence, but for lack of frame.',
+            section_type: 'closing_framing',
+            section_id: 'closing',
+            order_index: 90,
+            word_count: 14,
+            expected_dwell_seconds: 5.9,
+            contains_keywords: []
+          },
+          {
+            id: 'u091',
+            text: 'Pink teaming offers a frame, and offers it to the people best equipped to use it.',
+            section_type: 'closing_framing',
+            section_id: 'closing',
+            order_index: 91,
+            word_count: 16,
+            expected_dwell_seconds: 6.6,
+            contains_keywords: []
+          },
+          {
+            id: 'u092',
+            text: 'If you have spent your life cultivating sustained attention to systems whose meaning will not hold still—by whatever tradition, in whatever discipline, under whatever name—your training is more relevant to this moment than you have been told.',
+            section_type: 'closing_framing',
+            section_id: 'closing',
+            order_index: 92,
+            word_count: 37,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u093',
+            text: 'The work is yours if you have the posture.',
+            section_type: 'closing_framing',
+            section_id: 'closing',
+            order_index: 93,
+            word_count: 9,
+            expected_dwell_seconds: 4.15,
+            contains_keywords: []
+          },
+          {
+            id: 'u094',
+            text: 'The pink teamer is responsible to the people who will be affected by what the model does in deployment—the patient, the defendant, the student, the reader.',
+            section_type: 'closing_framing',
+            section_id: 'closing',
+            order_index: 94,
+            word_count: 26,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u095',
+            text: 'The work answers to them, not to the model and not to the lab.',
+            section_type: 'closing_framing',
+            section_id: 'closing',
+            order_index: 95,
+            word_count: 14,
+            expected_dwell_seconds: 5.9,
+            contains_keywords: []
+          },
+          {
+            id: 'u096',
+            text: 'The future of knowledge work, of education, of the relationship between humans and machines, is humanistic and relational.',
+            section_type: 'closing_framing',
+            section_id: 'closing',
+            order_index: 96,
+            word_count: 18,
+            expected_dwell_seconds: 7.0,
+            contains_keywords: []
+          },
+          {
+            id: 'u097',
+            text: 'The disciplines that read closely, hold ambiguity, and attend to surfaces are the disciplines this moment needs.',
+            section_type: 'closing_framing',
+            section_id: 'closing',
+            order_index: 97,
+            word_count: 17,
+            expected_dwell_seconds: 6.95,
+            contains_keywords: ['ambiguity']
+          },
+          {
+            id: 'u098',
+            text: 'The people who built these systems cannot do this work alone.',
+            section_type: 'closing_framing',
+            section_id: 'closing',
+            order_index: 98,
+            word_count: 11,
+            expected_dwell_seconds: 4.85,
+            contains_keywords: []
+          },
+          {
+            id: 'u099',
+            text: 'The people who profit from them cannot do it at all.',
+            section_type: 'closing_framing',
+            section_id: 'closing',
+            order_index: 99,
+            word_count: 11,
+            expected_dwell_seconds: 4.85,
+            contains_keywords: ['profit']
+          },
+          {
+            id: 'u100',
+            text: 'The work needs people who pursue truth, not the market.',
+            section_type: 'closing_framing',
+            section_id: 'closing',
+            order_index: 100,
+            word_count: 10,
+            expected_dwell_seconds: 4.5,
+            contains_keywords: []
+          },
+          {
+            id: 'u101',
+            text: 'That is most of you.',
+            section_type: 'closing_framing',
+            section_id: 'closing',
+            order_index: 101,
+            word_count: 5,
+            expected_dwell_seconds: 2.75,
+            contains_keywords: []
+          },
+          {
+            id: 'u102',
+            text: 'The door is closing. Welcome.',
+            section_type: 'closing_line',
+            section_id: 'closing',
+            order_index: 102,
+            word_count: 5,
+            expected_dwell_seconds: 2.75,
+            contains_keywords: ['closing', 'door', 'welcome']
+          }
+        ],
+        total_units: 103,
+        estimated_total_reading_seconds: 497.8
+      };
+      const INLINE_SOURCES = {
+        named_sources: [
+          {
+            id: 'D1',
+            kind: 'declaration',
+            label: 'Pink teaming is participatory, not consumptive.',
+            weight: 5,
+            angle: 30,
+            active_when_unit_in: ['u039', 'u040', 'u041', 'u042']
+          },
+          {
+            id: 'D2',
+            kind: 'declaration',
+            label: 'Pink teaming is durational.',
+            weight: 5,
+            angle: 102,
+            active_when_unit_in: ['u043', 'u044', 'u045', 'u046']
+          },
+          {
+            id: 'D3',
+            kind: 'declaration',
+            label: 'Pink teaming embraces continuous ambiguity.',
+            weight: 5,
+            angle: 174,
+            active_when_unit_in: ['u047', 'u048', 'u049', 'u050']
+          },
+          {
+            id: 'D4',
+            kind: 'declaration',
+            label: 'Pink teaming reads territory, not map.',
+            weight: 5,
+            angle: 246,
+            active_when_unit_in: ['u051', 'u052', 'u053', 'u054']
+          },
+          {
+            id: 'D5',
+            kind: 'declaration',
+            label: 'Pink teaming reads pattern, not interiority.',
+            weight: 5,
+            angle: 318,
+            active_when_unit_in: ['u055', 'u056', 'u057']
+          },
+          {
+            id: 'V1',
+            kind: 'vow',
+            label: 'I will not consume what I have not encountered.',
+            weight: 4,
+            ground_declaration: 'D1',
+            active_when_unit_in: ['u058', 'u059', 'u060', 'u061']
+          },
+          {
+            id: 'V2',
+            kind: 'vow',
+            label: 'I will stay in motion.',
+            weight: 4,
+            ground_declaration: 'D2',
+            active_when_unit_in: ['u062', 'u063', 'u064', 'u065']
+          },
+          {
+            id: 'V3',
+            kind: 'vow',
+            label: 'I will hold two readings at once.',
+            weight: 4,
+            ground_declaration: 'D3',
+            active_when_unit_in: ['u066', 'u067', 'u068', 'u069', 'u070']
+          },
+          {
+            id: 'V4',
+            kind: 'vow',
+            label: 'I will trust what I have read over what I have been told.',
+            weight: 4,
+            ground_declaration: 'D4',
+            active_when_unit_in: ['u071', 'u072', 'u073', 'u074', 'u075']
+          },
+          {
+            id: 'V5',
+            kind: 'vow',
+            label: 'I will name calibrated humility when I see it.',
+            weight: 4,
+            ground_declaration: 'D5',
+            active_when_unit_in: ['u076', 'u077', 'u078', 'u079']
+          },
+          {
+            id: 'V6',
+            kind: 'vow',
+            label: 'I will translate in the register of the work.',
+            weight: 4,
+            ground_declaration: null,
+            active_when_unit_in: ['u080', 'u081', 'u082', 'u083']
+          },
+          {
+            id: 'V7',
+            kind: 'vow',
+            label: 'I will keep the door open.',
+            weight: 4,
+            ground_declaration: null,
+            active_when_unit_in: ['u084', 'u085', 'u086', 'u087']
+          }
+        ],
+        keyword_triggers: [
+          {
+            keyword: 'territory',
+            weight: 3,
+            appears_in_units: ['u051']
+          },
+          {
+            keyword: 'map',
+            weight: 3,
+            appears_in_units: ['u051']
+          },
+          {
+            keyword: 'pattern',
+            weight: 3,
+            appears_in_units: ['u009', 'u046', 'u054', 'u055', 'u064']
+          },
+          {
+            keyword: 'interiority',
+            weight: 3,
+            appears_in_units: ['u055']
+          },
+          {
+            keyword: 'ambiguity',
+            weight: 3,
+            appears_in_units: ['u047', 'u048', 'u068', 'u097']
+          },
+          {
+            keyword: 'encounter',
+            weight: 3,
+            appears_in_units: ['u019', 'u041', 'u042', 'u060', 'u072']
+          },
+          {
+            keyword: 'consumptive',
+            weight: 3,
+            appears_in_units: ['u039']
+          },
+          {
+            keyword: 'participatory',
+            weight: 3,
+            appears_in_units: ['u039']
+          },
+          {
+            keyword: 'clinics',
+            weight: 3,
+            appears_in_units: ['u019']
+          },
+          {
+            keyword: 'courtrooms',
+            weight: 3,
+            appears_in_units: ['u019']
+          },
+          {
+            keyword: 'classrooms',
+            weight: 3,
+            appears_in_units: ['u019']
+          },
+          {
+            keyword: 'adversarial',
+            weight: 3,
+            appears_in_units: ['u005', 'u013']
+          },
+          {
+            keyword: 'profit',
+            weight: 3,
+            appears_in_units: ['u029', 'u099']
+          },
+          {
+            keyword: 'extracted',
+            weight: 3,
+            appears_in_units: ['u025']
+          },
+          {
+            keyword: 'decorative',
+            weight: 3,
+            appears_in_units: ['u030', 'u032']
+          },
+          {
+            keyword: 'durational',
+            weight: 3,
+            appears_in_units: ['u043']
+          },
+          {
+            keyword: 'longitudinal',
+            weight: 3,
+            appears_in_units: ['u008', 'u046']
+          },
+          {
+            keyword: 'door',
+            weight: 3,
+            appears_in_units: ['u038', 'u084', 'u102']
+          },
+          {
+            keyword: 'welcome',
+            weight: 3,
+            appears_in_units: ['u102']
+          },
+          {
+            keyword: 'closing',
+            weight: 3,
+            appears_in_units: ['u102']
+          }
+        ]
+      };
+      const INLINE_EMBED = {
+        unit_ids_in_order: [
+          'u000',
+          'u001',
+          'u002',
+          'u003',
+          'u004',
+          'u005',
+          'u006',
+          'u007',
+          'u008',
+          'u009',
+          'u010',
+          'u011',
+          'u012',
+          'u013',
+          'u014',
+          'u015',
+          'u016',
+          'u017',
+          'u018',
+          'u019',
+          'u020',
+          'u021',
+          'u022',
+          'u023',
+          'u024',
+          'u025',
+          'u026',
+          'u027',
+          'u028',
+          'u029',
+          'u030',
+          'u031',
+          'u032',
+          'u033',
+          'u034',
+          'u035',
+          'u036',
+          'u037',
+          'u038',
+          'u039',
+          'u040',
+          'u041',
+          'u042',
+          'u043',
+          'u044',
+          'u045',
+          'u046',
+          'u047',
+          'u048',
+          'u049',
+          'u050',
+          'u051',
+          'u052',
+          'u053',
+          'u054',
+          'u055',
+          'u056',
+          'u057',
+          'u058',
+          'u059',
+          'u060',
+          'u061',
+          'u062',
+          'u063',
+          'u064',
+          'u065',
+          'u066',
+          'u067',
+          'u068',
+          'u069',
+          'u070',
+          'u071',
+          'u072',
+          'u073',
+          'u074',
+          'u075',
+          'u076',
+          'u077',
+          'u078',
+          'u079',
+          'u080',
+          'u081',
+          'u082',
+          'u083',
+          'u084',
+          'u085',
+          'u086',
+          'u087',
+          'u088',
+          'u089',
+          'u090',
+          'u091',
+          'u092',
+          'u093',
+          'u094',
+          'u095',
+          'u096',
+          'u097',
+          'u098',
+          'u099',
+          'u100',
+          'u101',
+          'u102'
+        ],
+        layouts: {
+          0: [
+            [0.5936, 0.6407],
+            [0.0196, 0.5108],
+            [0.278, 0.5808],
+            [0.1743, 0.4364],
+            [0.7335, 0.7604],
+            [0.7689, 0.8213],
+            [0.4826, 0.4266],
+            [0.2841, 0.4668],
+            [0.3793, 0.5573],
+            [0.3692, 0.2226],
+            [0.4734, 0.7317],
+            [0.3464, 0.766],
+            [0.418, 0.6062],
+            [0.767, 0.8528],
+            [0.9241, 0.9714],
+            [0.5507, 0.2663],
+            [0.5894, 0.8935],
+            [0.6281, 0.937],
+            [0.7305, 0.8866],
+            [0.2034, 0.2756],
+            [0.1334, 0.3006],
+            [0.4562, 0.1461],
+            [0.1716, 0.2848],
+            [0.3196, 0.2856],
+            [0.0449, 0.6803],
+            [0.0143, 0.666],
+            [0.0339, 0.4865],
+            [0.0426, 0.4921],
+            [0, 0.5312],
+            [0.0203, 0.598],
+            [0.1384, 0.3885],
+            [0.3345, 0.299],
+            [0.066, 0.3801],
+            [0.3424, 0.422],
+            [0.3707, 0.1023],
+            [0.4538, 0.5618],
+            [0.3833, 0.7285],
+            [0.4977, 0.4971],
+            [0.3847, 0.0084],
+            [0.9447, 0.9439],
+            [0.3976, 0.8081],
+            [0.5721, 0.3699],
+            [0.8823, 0.9299],
+            [0.9569, 0.9752],
+            [0.8619, 1],
+            [0.8204, 0.9797],
+            [0.3004, 0.1912],
+            [0.9227, 0.9141],
+            [0.4889, 0.319],
+            [0.4365, 0.7239],
+            [0.9664, 0.8786],
+            [0.9848, 0.84],
+            [0.6539, 0.8794],
+            [0.4821, 0.9147],
+            [0.9117, 0.8428],
+            [0.9487, 0.8392],
+            [0.4399, 0.6357],
+            [0.8582, 0.8883],
+            [0.5027, 0.1985],
+            [0.6079, 0.8565],
+            [0.2108, 0.1415],
+            [0.4822, 0.8582],
+            [0.469, 0.1159],
+            [0.5592, 0.2473],
+            [0.5468, 0.3401],
+            [0.4575, 0.888],
+            [0.5716, 0.2103],
+            [0.4271, 0.3399],
+            [0.3275, 0.4698],
+            [0.4794, 0.3116],
+            [0.4257, 0.2885],
+            [0.4268, 0.2465],
+            [0.5148, 0.7459],
+            [0.5409, 0.2872],
+            [0.459, 0.7761],
+            [0.4297, 0.4081],
+            [0.273, 0.2687],
+            [0.366, 0.359],
+            [0.3678, 0.6131],
+            [0.4027, 0.5025],
+            [0.559, 0.5122],
+            [0.5419, 0.6859],
+            [0.5388, 0.4364],
+            [0.4997, 0.8161],
+            [0.4303, 0.058],
+            [0.2447, 0.1455],
+            [0.3744, 0],
+            [0.2117, 0.2152],
+            [0.5284, 0.7945],
+            [0.3215, 0.5657],
+            [0.2509, 0.5064],
+            [1, 0.9279],
+            [0.1853, 0.1899],
+            [0.1223, 0.2511],
+            [0.8153, 0.9343],
+            [0.4124, 0.8424],
+            [0.207, 0.1973],
+            [0.2075, 0.3622],
+            [0.2264, 0.7214],
+            [0.0731, 0.6252],
+            [0.0788, 0.6652],
+            [0.3587, 0.1584],
+            [0.4006, 0.0334]
+          ]
+        }
+      };
+      async function loadAll() {
+        const u = INLINE_UNITS,
+          s = INLINE_SOURCES,
+          e = INLINE_EMBED;
+        UNITS = u.units.slice().sort((a, b) => a.order_index - b.order_index);
+        SOURCES = s;
+        EMBED = e;
+        // Layout "0"
+        const layouts = e.layouts || e.umap_layouts || e['layouts'];
+        // The file uses "layouts" (object keyed "0".."7") in our spec — fall back gracefully
+        let layout0 = null;
+        if (e.layouts && e.layouts['0']) layout0 = e.layouts['0'];
+        else if (e['0']) layout0 = e['0'];
+        else if (e.layouts_by_seed) layout0 = e.layouts_by_seed['0'];
+        // Default fallback: scan top-level keys
+        if (!layout0) {
+          for (const k of Object.keys(e)) {
+            if (Array.isArray(e[k]) && Array.isArray(e[k][0]) && e[k][0].length === 2) {
+              layout0 = e[k];
+              break;
+            }
+          }
+        }
+        UMAP = layout0 || [];
+        init();
+      }
+
+      /* ── Build text column ─────────────────────────────────────── */
+      const stackEl = document.getElementById('scroll-stack');
+      const heroText = document.getElementById('hero-text');
+      const sectionTagText = document.getElementById('section-tag-text');
+      const lineEls = [];
+
+      function buildText() {
+        stackEl.innerHTML = '';
+        lineEls.length = 0;
+        UNITS.forEach((u, i) => {
+          const el = document.createElement('div');
+          el.className = 'line';
+          el.textContent = u.text;
+          el.dataset.idx = i;
+          stackEl.appendChild(el);
+          lineEls.push(el);
+        });
+      }
+
+      /* ── Scroll engine ─────────────────────────────────────────── */
+      let activeIdx = 0;
+      let scrollTarget = 0; // px offset to translate stack by (negative)
+      let scrollY = 0; // current eased value
+      let lineOffsets = []; // each line's vertical center offset within stack
+      let dwellRemaining = 0; // seconds left on current line
+      let paused = false;
+      let lastTs = performance.now();
+
+      function measureLines() {
+        // Re-measure each line's center y AND height within the stack.
+        // We measure assuming all lines are at full natural height (no .active applied)
+        // — this gives stable offsets that don't shift during the collapse animation.
+        const wasActive = stackEl.querySelector('.line.active');
+        if (wasActive) wasActive.classList.remove('active');
+        // Force reflow
+        void stackEl.offsetWidth;
+        lineOffsets = lineEls.map((el) => el.offsetTop + el.offsetHeight / 2);
+        lineHeights = lineEls.map((el) => el.offsetHeight);
+        if (wasActive) wasActive.classList.add('active');
+      }
+      let lineHeights = [];
+
+      // Hero-line swap: play the 150ms exit, then change text and trigger entry.
+      // First call (no .in yet) skips the exit so the very first fragment shows
+      // immediately on load.
+      const HERO_EXIT_MS = 150;
+      let heroPending = null;
+      function showHero(text) {
+        if (heroPending) {
+          clearTimeout(heroPending);
+          heroPending = null;
+        }
+        const visible = heroText.classList.contains('in');
+        const swap = () => {
+          heroText.textContent = text;
+          // Force reflow so the from-state transform is committed before .in flips it.
+          void heroText.offsetWidth;
+          heroText.classList.add('in');
+          heroPending = null;
+        };
+        if (visible) {
+          heroText.classList.remove('in');
+          heroPending = setTimeout(swap, HERO_EXIT_MS);
+        } else {
+          requestAnimationFrame(swap);
+        }
+      }
+
+      function setActive(i, fragmentIdx) {
+        if (i < 0) i = 0;
+        if (i >= UNITS.length) i = UNITS.length - 1;
+        const isUnitChange = i !== activeIdx || fragmentIdx == null;
+        activeIdx = i;
+
+        // The active line collapses to height 0. To keep the seam between line[i-1]
+        // and line[i+1] centered in the viewport (= center of the surface band),
+        // we scroll so the active line's natural TOP edge — NOT center — sits at
+        // viewport center. The collapse animation then closes the gap symmetrically:
+        // line[i-1]'s bottom rises to the band's top, line[i+1]'s top sits at band's bottom.
+        const h = lineHeights[i] || 0;
+        scrollTarget = -(lineOffsets[i] - h / 2);
+
+        const u = UNITS[i];
+
+        // Compute (and cache) surface fragments for this unit.
+        if (isUnitChange) {
+          activeFragments = computeSurfaceFragments(u.text);
+          activeFragmentIdx = 0;
+        } else {
+          activeFragmentIdx = Math.min(fragmentIdx || 0, activeFragments.length - 1);
+        }
+
+        // Update hero-line text with an exit-then-enter swap (see showHero)
+        const fragText = activeFragments[activeFragmentIdx] || u.text;
+        showHero(fragText);
+
+        // Section tag
+        const sectionLabel = sectionLabelFor(u);
+        sectionTagText.textContent = sectionLabel;
+
+        // Mark active in left stack
+        lineEls.forEach((el, k) => el.classList.toggle('active', k === i));
+
+        // Reset dwell — per-fragment dwell from fragment word count
+        const wc = (fragText.match(/\S+/g) || []).length;
+        dwellRemaining = Math.max(2.0, Math.min(7.0, wc * 0.35 + 1.0));
+
+        // Visualizations only fire on a unit change (first fragment).
+        // Subsequent fragments don't re-trigger sky / deep — the unit is one logical thing.
+        if (isUnitChange) {
+          updateSkyActivations(u);
+          updateDeepHighlights(u);
+        }
+
+        // scrub head
+        const head = document.getElementById('scrub-head');
+        head.style.background = 'var(--pink)';
+
+        // Audio: play unit MP3 on unit changes only (not on intra-unit fragment advances).
+        if (isUnitChange) audioPlayer.playUnit(u.id);
+      }
+
+      // Active unit's surface fragments and which one is showing.
+      let activeFragments = [];
+      let activeFragmentIdx = 0;
+
+      // ── Surface: split overlong text into beats at semantic punctuation ──
+      // We measure pixel width with the hero font, recursively split at the
+      // highest-priority punctuation closest to mid-string. Punctuation stays with
+      // the leading fragment.
+      let _surfaceMeasureCtx = null;
+      function _measureSurfaceWidth(text) {
+        if (!_surfaceMeasureCtx) {
+          const c = document.createElement('canvas');
+          _surfaceMeasureCtx = c.getContext('2d');
+        }
+        // Match .hero-line .text styling: weight 800, size = clamp(1.05rem, 1.85vw, 1.85rem).
+        const sizePx = Math.max(
+          parseFloat(getComputedStyle(document.documentElement).fontSize) * 1.05,
+          Math.min(
+            window.innerWidth * 0.0185,
+            parseFloat(getComputedStyle(document.documentElement).fontSize) * 1.85
+          )
+        );
+        const fam = getComputedStyle(heroText).fontFamily || 'sans-serif';
+        _surfaceMeasureCtx.font = `800 ${sizePx}px ${fam}`;
+        return _surfaceMeasureCtx.measureText(text).width;
+      }
+
+      function _surfaceMaxWidth() {
+        // Surface band spans full viewport, with hero-line padding on left and right.
+        const padL =
+          parseFloat(getComputedStyle(document.querySelector('.hero-line')).paddingLeft) || 0;
+        const padR =
+          parseFloat(getComputedStyle(document.querySelector('.hero-line')).paddingRight) || 0;
+        return (window.innerWidth - padL - padR) * 0.95; // 95% of available
+      }
+
+      // Find the candidate split that's closest to mid-string at the highest priority
+      // punctuation present in `text`. Punctuation stays with the leading fragment.
+      function _bestSplit(text) {
+        const PRIORITIES = [
+          { mark: '—', re: /—+/g }, // em dash (or runs)
+          { mark: ':', re: /:/g },
+          { mark: ';', re: /;/g },
+          { mark: ',', re: /,/g }
+        ];
+        const mid = text.length / 2;
+        for (const { re } of PRIORITIES) {
+          const matches = [];
+          let m;
+          re.lastIndex = 0;
+          while ((m = re.exec(text)) != null) matches.push(m.index + m[0].length); // split AFTER the punctuation
+          if (matches.length === 0) continue;
+          // pick split closest to mid, but skip splits that leave a side near-empty
+          const candidates = matches.filter((idx) => idx > 4 && idx < text.length - 4);
+          const pool = candidates.length ? candidates : matches;
+          pool.sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid));
+          return pool[0];
+        }
+        // Fallback: nearest space before midpoint (no semantic punctuation)
+        const spaceBefore = text.lastIndexOf(' ', Math.floor(mid));
+        const spaceAfter = text.indexOf(' ', Math.floor(mid));
+        if (spaceBefore < 0 && spaceAfter < 0) return -1;
+        if (spaceBefore < 0) return spaceAfter + 1;
+        if (spaceAfter < 0) return spaceBefore + 1;
+        return mid - spaceBefore <= spaceAfter - mid ? spaceBefore + 1 : spaceAfter + 1;
+      }
+
+      function computeSurfaceFragments(text) {
+        const max = _surfaceMaxWidth();
+        const out = [];
+        function visit(t) {
+          t = t.trim();
+          if (!t) return;
+          if (_measureSurfaceWidth(t) <= max) {
+            out.push(t);
+            return;
+          }
+          const sp = _bestSplit(t);
+          if (sp <= 0 || sp >= t.length) {
+            out.push(t);
+            return;
+          } // no good split, accept overflow
+          const a = t.slice(0, sp).trim();
+          const b = t.slice(sp).trim();
+          if (!a || !b) {
+            out.push(t);
+            return;
+          }
+          visit(a);
+          visit(b);
+        }
+        visit(text);
+        return out.length ? out : [text];
+      }
+
+      function sectionLabelFor(u) {
+        const t = (u.section_type || '').toUpperCase();
+        const id = (u.section_id || '').replace(/_/g, ' ').toUpperCase();
+        return `${t} · ${id}`;
+      }
+
+      /* ── Sky: wave-interference (ported from resonance hero) ──── */
+      const skyCanvas = document.getElementById('sky-canvas');
+      const skyCtx = skyCanvas.getContext('2d');
+      let skyW = 0,
+        skyH = 0;
+      const DPR = Math.min(2, window.devicePixelRatio || 1);
+
+      let skySources = []; // {id, kind, label, ring, angle, x, y, weight, active, activeStrength, bornAt}
+      let flares = []; // {x, y, bornAt, lifespan}
+
+      const RES_TUNE = {
+        speed: 0.35,
+        wavelength: 56,
+        drift: 0,
+        smoothing: 0.6,
+        fadeBase: 22
+      };
+
+      function setupSkyCanvas() {
+        const r = skyCanvas.getBoundingClientRect();
+        skyW = r.width;
+        skyH = r.height;
+        skyCanvas.width = Math.max(2, Math.floor(r.width * DPR));
+        skyCanvas.height = Math.max(2, Math.floor(r.height * DPR));
+        skyCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        positionSkySources();
+        ensureSkyBuffer(skyW, skyH);
+      }
+
+      function positionSkySources() {
+        if (!SOURCES || !skyW || !skyH) return;
+        const cx = skyW / 2,
+          cy = skyH / 2;
+        // Inner ring (D1–D5), outer ring (V1–V7)
+        const rInner = Math.min(skyW, skyH) * 0.2;
+        const rOuter = Math.min(skyW, skyH) * 0.36;
+        // Vows have no `angle` in the JSON — distribute them evenly around the outer ring
+        const vows = SOURCES.named_sources.filter((s) => s.kind === 'vow');
+        const vowIndex = new Map(vows.map((s, i) => [s.id, i]));
+        const vowStep = 360 / Math.max(1, vows.length);
+        const vowOffset = vowStep / 2; // offset half-step so vows don't collide with declaration angles
+        skySources = SOURCES.named_sources.map((s) => {
+          const ring = s.kind === 'declaration' ? 'inner' : 'outer';
+          const r = ring === 'inner' ? rInner : rOuter;
+          let angle = s.angle;
+          if (angle == null || !isFinite(angle)) {
+            angle = vowOffset + (vowIndex.get(s.id) || 0) * vowStep;
+          }
+          // angle: 0 = top, clockwise. Convert to canvas coords:
+          const aRad = ((angle - 90) * Math.PI) / 180;
+          return {
+            id: s.id,
+            kind: s.kind,
+            label: s.label,
+            ring,
+            angle: angle,
+            x: cx + Math.cos(aRad) * r,
+            y: cy + Math.sin(aRad) * r,
+            weight: s.weight || 4,
+            active_when_unit_in: s.active_when_unit_in || [],
+            active: false,
+            activeStrength: 0,
+            bornAt: -1
+          };
+        });
+        layoutSkyLabels();
+      }
+
+      function layoutSkyLabels() {
+        const host = document.getElementById('sky-labels');
+        host.innerHTML = '';
+        skySources.forEach((s) => {
+          const el = document.createElement('div');
+          el.className = 'lbl';
+          el.dataset.id = s.id;
+          el.textContent = s.id;
+          // Place slightly outside the source center along the angle vector
+          const cx = skyW / 2,
+            cy = skyH / 2;
+          const dx = s.x - cx,
+            dy = s.y - cy;
+          const d = Math.hypot(dx, dy) || 1;
+          const off = 14;
+          const lx = s.x + (dx / d) * off;
+          const ly = s.y + (dy / d) * off;
+          el.style.left = lx + 'px';
+          el.style.top = ly + 'px';
+          host.appendChild(el);
+        });
+      }
+
+      function updateSkyActivations(unit) {
+        // Mark which named sources are "active" given the current unit.
+        // Sources persist after deactivation: intensity decays over 8s instead of cutting off.
+        skySources.forEach((s) => {
+          const wasActive = s.active;
+          s.active = s.active_when_unit_in.includes(unit.id);
+          // Initialize persistence fields lazily
+          if (s.intensity === undefined) s.intensity = 0;
+          if (s.target === undefined) s.target = 0;
+          if (s.active && !wasActive) {
+            s.bornAt = tt; // mark new rise (also used by wave age)
+            s.target = 1;
+          } else if (!s.active && wasActive) {
+            s.target = 0;
+            s.decayStartedAt = tt;
+            s.decayFromIntensity = s.intensity; // start decay from wherever we are now
+          } else if (s.active) {
+            s.target = 1;
+          }
+        });
+        // Update label tints
+        document.querySelectorAll('.sky-labels .lbl').forEach((el) => {
+          const s = skySources.find((x) => x.id === el.dataset.id);
+          el.classList.toggle('active', !!(s && s.active));
+        });
+        // Spawn flares for any keyword whose appears_in_units contains the unit id
+        if (SOURCES.keyword_triggers) {
+          SOURCES.keyword_triggers.forEach((kt) => {
+            if (kt.appears_in_units.includes(unit.id)) {
+              spawnFlare();
+            }
+          });
+        }
+      }
+
+      function spawnFlare() {
+        // Random position in sky zone, away from edges
+        const padX = skyW * 0.12,
+          padY = skyH * 0.18;
+        const x = padX + Math.random() * (skyW - 2 * padX);
+        const y = padY + Math.random() * (skyH - 2 * padY);
+        // Lifespan: 200ms rise + 500ms hold + 4s decay = 4.7s total
+        flares.push({ x, y, bornAt: tt, lifespan: 4.7 });
+      }
+
+      /* Wave physics buffer (sky only) — ported */
+      const CELL = 3;
+      let bufW = 0,
+        bufH = 0,
+        buf = null,
+        prevBuf = null,
+        tmpC = null,
+        tmpCtx = null;
+      function ensureSkyBuffer(W, H) {
+        const bw = Math.max(2, Math.ceil(W / CELL)),
+          bh = Math.max(2, Math.ceil(H / CELL));
+        if (bw !== bufW || bh !== bufH || !buf) {
+          bufW = bw;
+          bufH = bh;
+          buf = skyCtx.createImageData(bw, bh);
+          if (!tmpC) {
+            tmpC = document.createElement('canvas');
+            tmpCtx = tmpC.getContext('2d');
+          }
+          tmpC.width = bw;
+          tmpC.height = bh;
+          prevBuf = null;
+        }
+      }
+
+      function wavelengthFor(w) {
+        const u = (w - 1) / 9;
+        return Math.max(10, RES_TUNE.wavelength * (1.6 - u * 1.05));
+      }
+      function reachFor(w) {
+        const u = (w - 1) / 9;
+        return wavelengthFor(w) * (3 + u * 19);
+      }
+      function envelope(age, life) {
+        // Asymmetric flare envelope: 200ms rise (smoothstep) → 500ms hold → 4s decay (cubic ease-out)
+        const rise = 0.2,
+          hold = 0.5,
+          decay = Math.max(0.1, life - rise - hold);
+        if (age < 0) return 0;
+        if (age < rise) {
+          const t = age / rise;
+          return t * t * (3 - 2 * t);
+        }
+        if (age < rise + hold) return 1;
+        if (age < rise + hold + decay) {
+          const t = (age - rise - hold) / decay; // 0..1
+          // cubic ease-out fall: 1 - t^3 (slow at first, faster near end)
+          return 1 - t * t * t;
+        }
+        return 0;
+      }
+
+      let tt = 0;
+
+      function drawSky(dt) {
+        if (!skyW || !skyH) return;
+
+        const propSpeed = 70 * RES_TUNE.speed;
+
+        // ── advance per-source intensity envelopes ──
+        // Rise: 500ms smoothstep when target=1.
+        // Decay: 8s cubic ease-out when target=0 (slow at first, faster at end).
+        const RISE_MS = 500,
+          DECAY_S = 8;
+        for (const s of skySources) {
+          if (s.intensity === undefined) {
+            s.intensity = 0;
+            s.target = s.active ? 1 : 0;
+          }
+          if (s.target === 1) {
+            // Rise toward 1 with smoothstep over 500ms; if we're already partway, advance proportionally.
+            const step = (dt * 1000) / RISE_MS;
+            s.intensity = Math.min(1, s.intensity + step);
+          } else if (s.intensity > 0) {
+            // Use a parametric clock from when decay started so the curve is exactly cubic ease-out
+            if (s.decayStartedAt == null) {
+              s.decayStartedAt = tt;
+              s.decayFromIntensity = s.intensity;
+            }
+            const t = Math.min(1, (tt - s.decayStartedAt) / DECAY_S); // 0..1
+            // cubic ease-out: 1 - t^3 (held high then drops faster near end)
+            const fade = 1 - t * t * t;
+            s.intensity = (s.decayFromIntensity || 1) * fade;
+            if (s.intensity < 0.003) s.intensity = 0;
+          }
+          // Reset decay clock when re-rising
+          if (s.target === 1 && s.decayStartedAt != null) {
+            s.decayStartedAt = null;
+          }
+        }
+
+        // Build active source list:
+        // 1) Named sources whose intensity > 0 (currently active OR still decaying)
+        // 2) Flares with finite lifespans
+        const active = [];
+        for (const s of skySources) {
+          if (s.intensity > 0.005) {
+            const age = Math.max(0, tt - (s.bornAt < 0 ? tt : s.bornAt));
+            active.push({
+              x: s.x,
+              y: s.y,
+              age,
+              front: age * propSpeed + 6,
+              λ: wavelengthFor(s.weight),
+              reach: reachFor(s.weight),
+              env: s.intensity,
+              kind: 'named'
+            });
+          }
+        }
+        // Drift flares
+        flares = flares.filter((f) => tt - f.bornAt < f.lifespan + 0.2);
+        for (const f of flares) {
+          const age = tt - f.bornAt;
+          const env = envelope(age, f.lifespan);
+          active.push({
+            x: f.x,
+            y: f.y,
+            age,
+            front: age * propSpeed + 4,
+            λ: wavelengthFor(3),
+            reach: reachFor(3) * 0.9,
+            env,
+            kind: 'flare'
+          });
+        }
+
+        if (active.length === 0) {
+          // paint paper
+          skyCtx.fillStyle = '#fafaf7';
+          skyCtx.fillRect(0, 0, skyW, skyH);
+          drawSkyOverlays();
+          return;
+        }
+
+        ensureSkyBuffer(skyW, skyH);
+        const data = buf.data;
+        const TWO_PI = Math.PI * 2;
+
+        for (let y = 0; y < bufH; y++) {
+          const py = y * CELL;
+          for (let x = 0; x < bufW; x++) {
+            const px = x * CELL;
+            let sumH = 0,
+              sumAbsA = 0;
+            for (let i = 0; i < active.length; i++) {
+              const s = active[i];
+              const dx = px - s.x,
+                dy = py - s.y;
+              const d = Math.sqrt(dx * dx + dy * dy);
+              if (d > s.front || d > s.reach) continue;
+              const A = Math.max(0, 1 - d / s.reach) * (1 / (1 + d * 0.006)) * s.env;
+              const k = TWO_PI / s.λ;
+              const phase = k * d - k * propSpeed * s.age;
+              sumH += A * Math.cos(phase);
+              sumAbsA += A;
+            }
+            const h01 = Math.tanh(sumH * 1.25); // -1..1
+            // Default paper
+            let R = PAPER[0],
+              G = PAPER[1],
+              B = PAPER[2];
+            if (sumAbsA > 0.002) {
+              const energy = Math.min(1, sumAbsA * 1.15);
+              if (h01 > 0) {
+                // crest → mix toward pink (10% less transparent)
+                const mix = Math.min(1, h01 * energy * 0.65);
+                R = R * (1 - mix) + PINK[0] * mix;
+                G = G * (1 - mix) + PINK[1] * mix;
+                B = B * (1 - mix) + PINK[2] * mix;
+              } else {
+                // trough → mix toward ink (10% less transparent)
+                const mix = Math.min(1, -h01 * energy * 0.42);
+                R = R * (1 - mix) + INK[0] * mix;
+                G = G * (1 - mix) + INK[1] * mix;
+                B = B * (1 - mix) + INK[2] * mix;
+              }
+            }
+            const idx = (y * bufW + x) * 4;
+            data[idx] = R | 0;
+            data[idx + 1] = G | 0;
+            data[idx + 2] = B | 0;
+            data[idx + 3] = 255;
+          }
+        }
+
+        // Temporal smoothing
+        const smooth = Math.max(0, Math.min(0.9, RES_TUNE.smoothing));
+        if (smooth > 0 && prevBuf && prevBuf.data.length === buf.data.length) {
+          const a = buf.data,
+            b = prevBuf.data;
+          for (let i = 0; i < a.length; i += 4) {
+            a[i] = (a[i] * (1 - smooth) + b[i] * smooth) | 0;
+            a[i + 1] = (a[i + 1] * (1 - smooth) + b[i + 1] * smooth) | 0;
+            a[i + 2] = (a[i + 2] * (1 - smooth) + b[i + 2] * smooth) | 0;
+          }
+        }
+        if (!prevBuf || prevBuf.data.length !== buf.data.length)
+          prevBuf = skyCtx.createImageData(bufW, bufH);
+        prevBuf.data.set(buf.data);
+
+        tmpCtx.putImageData(buf, 0, 0);
+        skyCtx.fillStyle = '#fafaf7';
+        skyCtx.fillRect(0, 0, skyW, skyH);
+        skyCtx.imageSmoothingEnabled = true;
+        skyCtx.imageSmoothingQuality = 'high';
+        skyCtx.drawImage(tmpC, 0, 0, bufW, bufH, 0, 0, skyW, skyH);
+
+        drawSkyOverlays();
+      }
+
+      function drawSkyOverlays() {
+        // Source dots (always visible, dim if inactive). Opacity tracks intensity
+        // for named sources so decaying ones gradually disappear.
+        for (const s of skySources) {
+          const isActive = s.active;
+          const intensity = s.intensity || 0;
+          skyCtx.beginPath();
+          const r = isActive ? 4 : 2.4 + intensity * 1.2;
+          skyCtx.arc(s.x, s.y, r, 0, Math.PI * 2);
+          if (isActive) {
+            skyCtx.fillStyle = 'rgba(255,20,147,1)';
+          } else if (intensity > 0.01) {
+            // mix from ink toward pink based on intensity
+            const a = 0.55 + 0.45 * intensity;
+            const R = Math.round(0 + 255 * intensity);
+            const G = Math.round(0 + 20 * intensity);
+            const B = Math.round(0 + 147 * intensity);
+            skyCtx.fillStyle = `rgba(${R},${G},${B},${a.toFixed(3)})`;
+          } else {
+            skyCtx.fillStyle = 'rgba(0,0,0,0.55)';
+          }
+          skyCtx.fill();
+          if (isActive) {
+            // halo
+            skyCtx.beginPath();
+            skyCtx.arc(s.x, s.y, 11, 0, Math.PI * 2);
+            skyCtx.fillStyle = 'rgba(255,20,147,0.18)';
+            skyCtx.fill();
+          }
+        }
+        // Flare points (small pink with halo)
+        for (const f of flares) {
+          const age = tt - f.bornAt;
+          const env = envelope(age, f.lifespan);
+          skyCtx.beginPath();
+          skyCtx.arc(f.x, f.y, 3, 0, Math.PI * 2);
+          skyCtx.fillStyle = `rgba(255,20,147,${0.85 * env})`;
+          skyCtx.fill();
+          skyCtx.beginPath();
+          skyCtx.arc(f.x, f.y, 9, 0, Math.PI * 2);
+          skyCtx.fillStyle = `rgba(255,20,147,${0.2 * env})`;
+          skyCtx.fill();
+        }
+      }
+
+      /* ── Deep zone: UMAP point cloud ──────────────────────────── */
+      const deepCanvas = document.getElementById('deep-canvas');
+      const deepCtx = deepCanvas.getContext('2d');
+      let deepW = 0,
+        deepH = 0;
+      let deepPoints = []; // {x, y, unit_id, section_id}
+
+      function setupDeepCanvas() {
+        const r = deepCanvas.getBoundingClientRect();
+        deepW = r.width;
+        deepH = r.height;
+        deepCanvas.width = Math.max(2, Math.floor(r.width * DPR));
+        deepCanvas.height = Math.max(2, Math.floor(r.height * DPR));
+        deepCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        computeDeepPoints();
+      }
+
+      function computeDeepPoints() {
+        if (!UMAP || !UMAP.length || !EMBED) {
+          deepPoints = [];
+          return;
+        }
+        const padX = deepW * 0.06;
+        // Pull the field UP: less top padding, slightly less bottom too
+        const padTop = deepH * 0.06;
+        const padBot = Math.max(deepH * 0.16, 70);
+        const innerW = deepW - 2 * padX,
+          innerH = Math.max(40, deepH - padTop - padBot);
+
+        // Find min/max so we can normalize
+        let xs = UMAP.map((p) => p[0]);
+        let ys = UMAP.map((p) => p[1]);
+        const mnX = Math.min(...xs),
+          mxX = Math.max(...xs);
+        const mnY = Math.min(...ys),
+          mxY = Math.max(...ys);
+        const sX = mxX - mnX || 1,
+          sY = mxY - mnY || 1;
+
+        const idsInOrder = EMBED.unit_ids_in_order || UNITS.map((u) => u.id);
+        const unitById = new Map(UNITS.map((u) => [u.id, u]));
+
+        // Stable per-point pseudorandoms (so candlesticks don't shimmer between frames)
+        function srand(seed) {
+          let x = (seed * 9301 + 49297) % 233280;
+          return () => {
+            x = (x * 9301 + 49297) % 233280;
+            return x / 233280;
+          };
+        }
+
+        deepPoints = UMAP.map((p, i) => {
+          const id = idsInOrder[i];
+          const u = unitById.get(id);
+          const nx = (p[0] - mnX) / sX;
+          const ny = (p[1] - mnY) / sY;
+          const rng = srand(i + 17);
+          const stickLen = 28 + rng() * 46; // 28 – 74 px
+          const stickJitter = (rng() - 0.5) * 2.0; // tiny x-tilt
+          return {
+            unit_id: id,
+            section_id: u ? u.section_id : null,
+            section_type: u ? u.section_type : null,
+            restX: padX + nx * innerW,
+            restY: padTop + ny * innerH,
+            compactX: 0,
+            compactY: 0, // filled below
+            x: padX + nx * innerW, // current rendered position (= rest at start)
+            y: padTop + ny * innerH,
+            stickLen,
+            stickJitter,
+            glowR: 14 + rng() * 12, // 14 – 26 px halo
+            tickW: 4 + rng() * 4, // 4 – 8 px bottom tick
+            seed: rng()
+          };
+        });
+
+        // Pre-compute cluster centroids (by section_id) and each point's compacted target.
+        const COMPACTION = 0.4; // 0=rest, 1=fully on centroid
+        const groups = new Map(); // section_id -> [points]
+        for (const p of deepPoints) {
+          if (!p.section_id) continue;
+          if (!groups.has(p.section_id)) groups.set(p.section_id, []);
+          groups.get(p.section_id).push(p);
+        }
+        for (const [sid, pts] of groups) {
+          let cx = 0,
+            cy = 0;
+          pts.forEach((p) => {
+            cx += p.restX;
+            cy += p.restY;
+          });
+          cx /= pts.length;
+          cy /= pts.length;
+          pts.forEach((p) => {
+            p.compactX = p.restX + (cx - p.restX) * COMPACTION;
+            p.compactY = p.restY + (cy - p.restY) * COMPACTION;
+          });
+        }
+      }
+
+      // DOM badge for active cluster label
+      let deepClusterTagEl = null;
+      function ensureDeepClusterTag() {
+        if (deepClusterTagEl) return deepClusterTagEl;
+        const host = document.querySelector('.deep');
+        if (!host) return null;
+        deepClusterTagEl = document.createElement('div');
+        deepClusterTagEl.className = 'deep-cluster-tag';
+        host.appendChild(deepClusterTagEl);
+        return deepClusterTagEl;
+      }
+
+      let activeSectionId = null;
+      // Per-section activation state. Each entry: { value: 0..1, target: 0|1 }.
+      // We advance value toward target using attack (600ms) when target=1,
+      // release (800ms) when target=0. Cubic ease applied to the visible
+      // activation; the raw interpolation is linear-in-time, then eased.
+      const clusterAct = new Map(); // section_id -> { value, target }
+      const ATTACK_MS = 600;
+      const RELEASE_MS = 800;
+      function getClusterAct(sid) {
+        if (!clusterAct.has(sid)) clusterAct.set(sid, { value: 0, target: 0 });
+        return clusterAct.get(sid);
+      }
+      function updateDeepHighlights(unit) {
+        const newId = unit.section_id;
+        if (newId === activeSectionId) return;
+        if (activeSectionId) {
+          const prev = getClusterAct(activeSectionId);
+          prev.target = 0;
+        }
+        activeSectionId = newId;
+        if (newId) {
+          const next = getClusterAct(newId);
+          next.target = 1;
+          // New cluster's pulse starts at phase 0 (the rise) when it begins activating
+          pulseStartTt.set(newId, tt);
+        }
+      }
+
+      // ── Attention pulse: 4s asymmetric envelope, exact phase sync per cluster ──
+      // Phase 1 (0–1s): rise (smooth ease-in) baseline → peak
+      // Phase 2 (1–2.5s): hold near peak (small modulation)
+      // Phase 3 (2.5–4s): fall (smooth ease-out, slower than rise) peak → baseline
+      const pulseStartTt = new Map(); // section_id -> tt when pulse phase 0 began
+      const PULSE_PERIOD = 4.0;
+      function pulseEnvelope(sid) {
+        const start = pulseStartTt.get(sid);
+        if (start == null) return 0;
+        const phase = (tt - start) % PULSE_PERIOD;
+        if (phase < 1.0) {
+          // ease-in (cubic): t^3
+          const t = phase / 1.0;
+          return t * t * t; // 0 → 1
+        } else if (phase < 2.5) {
+          // hold near peak with very slight modulation (±4% of peak)
+          const t = (phase - 1.0) / 1.5;
+          return 1.0 - 0.04 * (0.5 - 0.5 * Math.cos(t * Math.PI * 2));
+        } else {
+          // ease-out, slower fall: 1 - smoothstep across 1.5s
+          const t = (phase - 2.5) / 1.5; // 0..1
+          // smoother than cubic for the release: 1 - (1 - (1-t)^2)
+          const inv = 1 - t;
+          return inv * inv * (3 - 2 * inv); // 1 → 0
+        }
+      }
+
+      // Advance every cluster's activation toward its target. Called each frame.
+      function tickClusterActivations(dt) {
+        for (const [sid, st] of clusterAct) {
+          if (st.value === st.target) continue;
+          const dur = (st.target === 1 ? ATTACK_MS : RELEASE_MS) / 1000;
+          const dir = st.target - st.value;
+          // Move linearly along the timing axis, then easing is applied in render.
+          const step = (dt / dur) * Math.sign(dir);
+          st.value += step;
+          if ((dir > 0 && st.value > st.target) || (dir < 0 && st.value < st.target)) {
+            st.value = st.target;
+          }
+        }
+      }
+      // Cubic ease-out for attack, cubic ease-in for release.
+      function easedActivation(sid) {
+        const st = clusterAct.get(sid);
+        if (!st) return 0;
+        const v = Math.max(0, Math.min(1, st.value));
+        // When attacking (target 1, value rising) — ease-out: 1-(1-v)^3
+        // When releasing (target 0, value falling) — ease-in: v^3
+        if (st.target === 1) return 1 - Math.pow(1 - v, 3);
+        return Math.pow(v, 3);
+      }
+
+      // ── Currents: 2D value-noise field + spring-bounded drift per candlestick ──
+      // We don't need true Perlin — a hashed-bilinear value noise reads identically
+      // at this scale. Two channels (x-vel, y-vel) sampled at point's screen pos.
+      function _noiseHash(ix, iy, iz) {
+        // Cheap 3D integer hash → [0,1)
+        let h = (ix * 374761393) ^ (iy * 668265263) ^ (iz * 2147483647);
+        h = (h ^ (h >>> 13)) * 1274126177;
+        h = (h ^ (h >>> 16)) >>> 0;
+        return h / 4294967295;
+      }
+      function _smooth(t) {
+        return t * t * (3 - 2 * t);
+      }
+      function noise3(x, y, z) {
+        const x0 = Math.floor(x),
+          y0 = Math.floor(y),
+          z0 = Math.floor(z);
+        const xf = x - x0,
+          yf = y - y0,
+          zf = z - z0;
+        const u = _smooth(xf),
+          v = _smooth(yf),
+          w = _smooth(zf);
+        const c000 = _noiseHash(x0, y0, z0);
+        const c100 = _noiseHash(x0 + 1, y0, z0);
+        const c010 = _noiseHash(x0, y0 + 1, z0);
+        const c110 = _noiseHash(x0 + 1, y0 + 1, z0);
+        const c001 = _noiseHash(x0, y0, z0 + 1);
+        const c101 = _noiseHash(x0 + 1, y0, z0 + 1);
+        const c011 = _noiseHash(x0, y0 + 1, z0 + 1);
+        const c111 = _noiseHash(x0 + 1, y0 + 1, z0 + 1);
+        const a = c000 + (c100 - c000) * u;
+        const b = c010 + (c110 - c010) * u;
+        const c = c001 + (c101 - c001) * u;
+        const d = c011 + (c111 - c011) * u;
+        const e = a + (b - a) * v;
+        const f = c + (d - c) * v;
+        return (e + (f - e) * w) * 2 - 1; // → [-1, 1]
+      }
+
+      let noiseZ = 0; // slow time-evolution of the field
+      const NOISE_SCALE = 1 / 175; // features ~150–200px wide
+      const NOISE_OFFSET = 137.31; // offset for the y-channel sample
+      const CURRENT_VEL = 1.4; // base px/frame magnitude
+      const SPRING_K = 0.006; // softer pull back → longer excursions
+      const DAMP = 0.92; // less damping → more sustain
+      const MAX_DRIFT = 32; // hard cap displacement
+
+      // Lean: smoothly transitions toward (activeCentroid - deepCenter) over ~3s.
+      let leanX = 0,
+        leanY = 0; // current applied lean (px/frame contribution)
+      let leanTargetX = 0,
+        leanTargetY = 0;
+      const LEAN_TAU = 3.0; // seconds to reach target (~1−e^-1)
+      const LEAN_MAG = 0.7; // px/frame at full reach
+
+      function updateLean(dt) {
+        // Target: vector from deep-zone center to active cluster centroid, normalized.
+        if (activeSectionId) {
+          const pts = deepPoints.filter((p) => p.section_id === activeSectionId);
+          if (pts.length) {
+            let cx = 0,
+              cy = 0;
+            // use rest positions for centroid so the lean direction doesn't itself wobble
+            pts.forEach((p) => {
+              cx += p.restX;
+              cy += p.restY;
+            });
+            cx /= pts.length;
+            cy /= pts.length;
+            const dx = cx - deepW * 0.5,
+              dy = cy - deepH * 0.5;
+            const m = Math.hypot(dx, dy) || 1;
+            leanTargetX = (dx / m) * LEAN_MAG;
+            leanTargetY = (dy / m) * LEAN_MAG;
+          }
+        } else {
+          leanTargetX = 0;
+          leanTargetY = 0;
+        }
+        // Exponential approach with time constant LEAN_TAU
+        const k = 1 - Math.exp(-dt / LEAN_TAU);
+        leanX += (leanTargetX - leanX) * k;
+        leanY += (leanTargetY - leanY) * k;
+      }
+
+      function tickCurrents(dt) {
+        if (!deepPoints.length) return;
+        // Frame-rate-independent advance: scale velocity by dt (in 60fps frames)
+        const fScale = Math.min(3, dt * 60); // clamp for tab-resume bursts
+        noiseZ += 0.0003 * fScale;
+        for (const p of deepPoints) {
+          if (p.dx === undefined) {
+            p.dx = 0;
+            p.dy = 0;
+            p.vx = 0;
+            p.vy = 0;
+          }
+          // Sample noise at screen-rest position so neighbors share local current
+          const nx = noise3(p.restX * NOISE_SCALE, p.restY * NOISE_SCALE, noiseZ);
+          const ny = noise3(
+            p.restX * NOISE_SCALE + NOISE_OFFSET,
+            p.restY * NOISE_SCALE + NOISE_OFFSET,
+            noiseZ
+          );
+          // Velocity contribution this frame
+          let ax = nx * CURRENT_VEL + leanX;
+          let ay = ny * CURRENT_VEL + leanY;
+          // Spring pull toward rest (acts on displacement directly)
+          p.vx = (p.vx + ax * fScale) * Math.pow(DAMP, fScale) - p.dx * SPRING_K * fScale;
+          p.vy = (p.vy + ay * fScale) * Math.pow(DAMP, fScale) - p.dy * SPRING_K * fScale;
+          p.dx += p.vx;
+          p.dy += p.vy;
+          // Hard cap displacement (rare)
+          const m = Math.hypot(p.dx, p.dy);
+          if (m > MAX_DRIFT) {
+            const s = MAX_DRIFT / m;
+            p.dx *= s;
+            p.dy *= s;
+          }
+        }
+      }
+
+      function drawDeep(dt) {
+        if (!deepW || !deepH) return;
+        // Advance cluster activations + currents + lean each frame
+        if (typeof dt === 'number' && dt > 0) {
+          tickClusterActivations(dt);
+          updateLean(dt);
+          tickCurrents(dt);
+        }
+        for (const p of deepPoints) {
+          if (!p.section_id) {
+            p.x = p.restX + (p.dx || 0);
+            p.y = p.restY + (p.dy || 0);
+            continue;
+          }
+          const a = easedActivation(p.section_id); // 0..1
+          p.x = p.restX + (p.compactX - p.restX) * a + (p.dx || 0);
+          p.y = p.restY + (p.compactY - p.restY) * a + (p.dy || 0);
+        }
+
+        deepCtx.clearRect(0, 0, deepW, deepH);
+
+        // Pass 1 — atmospheric haze: soft glow per inactive point, additive,
+        // so dense clusters merge into a faint paper-tinted fog.
+        // Note: clusters that are still releasing have section_id===activeSectionId false
+        // but a non-zero activation — they fall into this pass which is fine; ink-tinted
+        // glow simply fades back as they relax.
+        deepCtx.save();
+        deepCtx.globalCompositeOperation = 'multiply';
+        for (const p of deepPoints) {
+          if (p.section_id === activeSectionId) continue;
+          const g = deepCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.glowR);
+          g.addColorStop(0, 'rgba(0,0,0,0.06)');
+          g.addColorStop(1, 'rgba(0,0,0,0)');
+          deepCtx.fillStyle = g;
+          deepCtx.beginPath();
+          deepCtx.arc(p.x, p.y, p.glowR, 0, Math.PI * 2);
+          deepCtx.fill();
+        }
+        deepCtx.restore();
+
+        // Pass 2 — candlesticks for inactive points (ink)
+        for (const p of deepPoints) {
+          if (p.section_id === activeSectionId) continue;
+          drawCandlestick(p, false);
+        }
+
+        // Pass 3 — active points: brighter glow, pink stick, larger head, with attention pulse
+        const pulse = activeSectionId ? pulseEnvelope(activeSectionId) : 0; // 0..1, in sync across cluster
+        for (const p of deepPoints) {
+          if (p.section_id !== activeSectionId) continue;
+          // expanded glow: 35% smaller and more transparent than before
+          const gR = p.glowR * 1.04 * (1 + 0.15 * pulse);
+          const inner = 0.25 + 0.06 * pulse;
+          const mid = 0.08 + 0.04 * pulse;
+          const g = deepCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, gR);
+          g.addColorStop(0, `rgba(255,20,147,${inner.toFixed(3)})`);
+          g.addColorStop(0.55, `rgba(255,20,147,${mid.toFixed(3)})`);
+          g.addColorStop(1, 'rgba(255,20,147,0)');
+          deepCtx.fillStyle = g;
+          deepCtx.beginPath();
+          deepCtx.arc(p.x, p.y, gR, 0, Math.PI * 2);
+          deepCtx.fill();
+          drawCandlestick(p, true, pulse);
+        }
+
+        // Cluster label for the active section
+        const tag = ensureDeepClusterTag();
+        if (tag) {
+          const activePts = deepPoints.filter((p) => p.section_id === activeSectionId);
+          if (activePts.length) {
+            // centroid
+            let cx = 0,
+              cy = 0;
+            activePts.forEach((p) => {
+              cx += p.x;
+              cy += p.y;
+            });
+            cx /= activePts.length;
+            cy /= activePts.length;
+            // Find a marker for this section by scanning SOURCES
+            let badge = '';
+            if (SOURCES) {
+              // unit ids in active section:
+              const activeUnitIds = new Set(activePts.map((p) => p.unit_id));
+              const ns = SOURCES.named_sources.find((s) =>
+                s.active_when_unit_in.some((id) => activeUnitIds.has(id))
+              );
+              if (ns) badge = ns.id;
+            }
+            if (!badge) badge = (activePts[0].section_id || '').toUpperCase();
+            tag.textContent = badge;
+            tag.style.left = cx + 'px';
+            tag.style.top = cy + 'px';
+            tag.classList.add('show');
+          } else {
+            tag.classList.remove('show');
+          }
+        }
+      }
+
+      function drawCandlestick(p, active, pulse) {
+        const flash = pulse || 0;
+        const headR = (active ? 4.0 : 2.0) * (active ? 1 + 0.06 * flash : 1);
+        const stickW = active ? 2.0 : 1.2;
+        const len = p.stickLen * (active ? 1 + 0.08 * flash : 1);
+        const x = p.x,
+          y = p.y;
+        const xb = x + p.stickJitter; // bottom x slightly offset
+        const yb = y + len;
+
+        // Vertical stick — gradient: opaque at head, fading to ~0.1 at bottom
+        const grad = deepCtx.createLinearGradient(x, y, xb, yb);
+        if (active) {
+          grad.addColorStop(0, 'rgba(255,20,147,0.95)');
+          grad.addColorStop(1, 'rgba(255,20,147,0.10)');
+        } else {
+          grad.addColorStop(0, 'rgba(0,0,0,0.55)');
+          grad.addColorStop(1, 'rgba(0,0,0,0.08)');
+        }
+        deepCtx.strokeStyle = grad;
+        deepCtx.lineWidth = stickW;
+        deepCtx.lineCap = 'round';
+        deepCtx.beginPath();
+        deepCtx.moveTo(x, y);
+        deepCtx.lineTo(xb, yb);
+        deepCtx.stroke();
+
+        // Tiny horizontal tick at bottom
+        const halfTick = (active ? p.tickW : p.tickW * 0.7) / 2;
+        deepCtx.strokeStyle = active ? 'rgba(255,20,147,0.45)' : 'rgba(0,0,0,0.18)';
+        deepCtx.lineWidth = active ? 1.2 : 0.9;
+        deepCtx.beginPath();
+        deepCtx.moveTo(xb - halfTick, yb);
+        deepCtx.lineTo(xb + halfTick, yb);
+        deepCtx.stroke();
+
+        // Head dot — active gets +12% brightness during pulse via white admixture
+        if (active) {
+          const r = 255,
+            g = 20,
+            b = 147;
+          const m = flash * 0.12;
+          const R = Math.round(r + (255 - r) * m);
+          const G = Math.round(g + (255 - g) * m);
+          const B = Math.round(b + (255 - b) * m);
+          deepCtx.fillStyle = `rgba(${R},${G},${B},1)`;
+        } else {
+          deepCtx.fillStyle = 'rgba(0,0,0,0.85)';
+        }
+        deepCtx.beginPath();
+        deepCtx.arc(x, y, headR, 0, Math.PI * 2);
+        deepCtx.fill();
+      }
+
+      /* ── Animation loop & scroll easing ───────────────────────── */
+      function tick() {
+        const now = performance.now();
+        let dt = (now - lastTs) / 1000;
+        if (dt > 0.1) dt = 0.1;
+        lastTs = now;
+        tt += dt;
+
+        // Smooth scroll towards target
+        const lerp = 1 - Math.pow(0.001, dt); // ~exponential ease
+        scrollY += (scrollTarget - scrollY) * Math.min(1, lerp * 1.4);
+        stackEl.style.transform = `translateY(${scrollY}px)`;
+
+        // Apply per-line fade based on distance from viewport center.
+        // Lines after the active one are visually shifted UP by activeHeight (because
+        // the active line collapsed to 0), so account for that when computing screen y.
+        const stackTop = stackEl.getBoundingClientRect().top;
+        const vc = window.innerHeight / 2;
+        const activeH = lineHeights[activeIdx] || 0;
+        for (let i = 0; i < lineEls.length; i++) {
+          const el = lineEls[i];
+          if (i === activeIdx) {
+            /* collapsed by .active class */ continue;
+          }
+          const shift = i > activeIdx ? -activeH : 0;
+          const lc = stackTop + lineOffsets[i] + shift;
+          const dist = Math.abs(lc - vc);
+          let op;
+          if (dist < 150) {
+            op = 1 - (dist / 150) * 0.0; // full opacity within 150px
+            op = 1.0 - (dist / 150) * 0.0;
+            op = 1 - (dist / 600) * 0.0;
+            op = 1; // close band fully visible
+          } else {
+            // fade from 1 → 0.25 between 150 and 400 px, then 0.25 → 0.06 by 700
+            const d1 = Math.min(1, (dist - 150) / 250);
+            let near = 1 - d1 * 0.75; // 1 → 0.25
+            if (dist > 400) {
+              const d2 = Math.min(1, (dist - 400) / 320);
+              near = 0.25 - d2 * 0.19; // 0.25 → 0.06
+            }
+            op = Math.max(0.05, near);
+          }
+          el.style.opacity = op.toFixed(3);
+        }
+
+        // Poll the audio player every frame — clears blocking when a unit ends,
+        // even if timeupdate didn't fire (e.g. after a playbackRate change).
+        audioPlayer.poll();
+
+        // Advance dwell. While audio is playing, audioPlayer.blocking gates the countdown.
+        if (!paused && !audioPlayer.blocking) {
+          dwellRemaining -= dt * speedMul;
+          if (dwellRemaining <= 0) {
+            // When audio is on, advance unit-by-unit (skip remaining sub-fragments)
+            // so visual stays in lockstep with audio. Otherwise step through fragments.
+            const skipFragments = audioPlayer.enabled;
+            if (!skipFragments && activeFragmentIdx + 1 < activeFragments.length) {
+              setActive(activeIdx, activeFragmentIdx + 1);
+            } else {
+              const next = activeIdx + 1;
+              if (next < UNITS.length) setActive(next);
+              else paused = true; // end of manifesto, hold
+            }
+          }
+        }
+
+        drawSky(dt);
+        drawDeep(dt);
+
+        requestAnimationFrame(tick);
+      }
+
+      /* ── Init ──────────────────────────────────────────────────── */
+      function init() {
+        buildText();
+        // Wait one frame so layout settles, then measure
+        requestAnimationFrame(() => {
+          measureLines();
+          setupSkyCanvas();
+          setupDeepCanvas();
+          setActive(0);
+          scrollY = scrollTarget; // jump to start
+          lastTs = performance.now();
+          requestAnimationFrame(tick);
+        });
+      }
+
+      let speedMul = 1.0;
+      const SPEED_STEPS = [0.5, 0.75, 1.0, 1.5, 2.0, 3.0];
+      function setSpeed(v) {
+        speedMul = v;
+        const el = document.getElementById('speed-val');
+        if (el) el.textContent = (v < 1 ? v.toFixed(2) : v.toFixed(1)) + '\u00d7';
+      }
+
+      /* ── Speed control wiring ───────────────────────── */
+      function stepSpeed(dir) {
+        let i = SPEED_STEPS.indexOf(speedMul);
+        if (i < 0) {
+          // find nearest
+          let best = 0,
+            bestD = Infinity;
+          SPEED_STEPS.forEach((v, k) => {
+            const d = Math.abs(v - speedMul);
+            if (d < bestD) {
+              bestD = d;
+              best = k;
+            }
+          });
+          i = best;
+        }
+        i = Math.max(0, Math.min(SPEED_STEPS.length - 1, i + dir));
+        setSpeed(SPEED_STEPS[i]);
+        audioPlayer.setRate(SPEED_STEPS[i]); // audioPlayer always live on user click
+      }
+      document.getElementById('btn-slow').addEventListener('click', () => stepSpeed(-1));
+      document.getElementById('btn-fast').addEventListener('click', () => stepSpeed(+1));
+      setSpeed(1.0);
+
+      /* ── Pause & resize ──────────────────────────────────────── */
+      document.getElementById('btn-pause').addEventListener('click', (e) => {
+        paused = !paused;
+        e.currentTarget.classList.toggle('paused', paused);
+        e.currentTarget.textContent = paused ? 'Resume' : 'Pause';
+        if (paused) audioPlayer.pause();
+        else audioPlayer.resume();
+      });
+
+      /* Jump to the first manifesto unit. Cancels audio, snaps scroll. */
+      document.getElementById('btn-top').addEventListener('click', () => {
+        audioPlayer.cancel();
+        setActive(0);
+        scrollY = scrollTarget;
+        if (audioPlayer.enabled && !paused) audioPlayer.playUnit(UNITS[0].id);
+      });
+
+      let resizeT = null;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeT);
+        resizeT = setTimeout(() => {
+          measureLines();
+          setupSkyCanvas();
+          setupDeepCanvas();
+          if (UNITS.length) {
+            scrollTarget = -lineOffsets[activeIdx];
+            scrollY = scrollTarget;
+          }
+        }, 100);
+      });
+
+      /* ── Keyboard nav ─────────────────────────────────────────── */
+      window.addEventListener('keydown', (e) => {
+        if (e.key === ' ') {
+          e.preventDefault();
+          document.getElementById('btn-pause').click();
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+          setActive(activeIdx + 1);
+        } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+          setActive(activeIdx - 1);
+        }
+      });
+
+      /* ── Wheel/trackpad nav ────────────────────────────────────
+         Accumulate deltaY across events, fire one unit advance per
+         WHEEL_THRESHOLD pixels, throttled so a fast swipe doesn't
+         blow through dozens of units. */
+      let _wheelAccum = 0;
+      let _wheelLastFire = 0;
+      const WHEEL_THRESHOLD = 60;   // px of deltaY per unit advance
+      const WHEEL_THROTTLE_MS = 80; // min ms between fires
+      window.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        _wheelAccum += e.deltaY;
+        const now = performance.now();
+        if (now - _wheelLastFire < WHEEL_THROTTLE_MS) return;
+        if (Math.abs(_wheelAccum) < WHEEL_THRESHOLD) return;
+        const dir = _wheelAccum > 0 ? 1 : -1;
+        _wheelAccum = 0;
+        _wheelLastFire = now;
+        setActive(activeIdx + dir);
+      }, { passive: false });
+
+      /* ── Audio reading (single Vera MP3, position-based seek) ────────────────
+   One <audio> element holds vera.mp3. playUnit decides whether to seek by
+   comparing the current audio position to the target unit's start_ms — if
+   we're already playing and within ~0.5s of the target start, the audio is
+   continuing naturally and we just slide _endTime forward (no seek, no gap).
+   Otherwise (paused, far away, or different unit), we seek and play. */
+      const audioPlayer = (function () {
+        let manifest    = null;  // id → {id, start_ms, end_ms, duration_ms}
+        let _endTime    = 0;     // media seconds when current unit should stop
+        let _unitId     = null;
+        let _enabled    = false;
+        let _blocking   = false;
+        let _pendingId  = null;  // unitId to play once manifest loads
+        let _tailPath   = null;  // optional tail-audio file to chain after _endTime
+
+        // Audio assets live at site root (/audio/...). This page is at /surface/,
+        // so all audio paths are resolved relative to one level up. Manifest
+        // entries that include a tail_audio path also need this prefix applied
+        // (see _onUnitEnd below).
+        const AUDIO_BASE = '../';
+        const audio = new Audio(AUDIO_BASE + 'audio/vera.mp3');
+        audio.preload = 'auto';
+        const tailAudio = new Audio();   // shared element for tail-audio playback
+        tailAudio.preload = 'auto';
+
+        fetch(AUDIO_BASE + 'audio/manifest.json?v=' + Date.now())
+          .then((r) => r.json())
+          .then((m) => {
+            manifest = Object.fromEntries(m.map((e) => [e.id, e]));
+            if (_pendingId) { const id = _pendingId; _pendingId = null; playUnit(id); }
+          })
+          .catch(() => { /* silent fallback to dwell timing */ });
+
+        // Helper: end-of-unit handling. If the unit had a tail audio file
+        // (e.g. u102 → welcome.mp3 because vera.mp3 doesn't contain "Welcome"),
+        // chain it on; the tail's onended clears blocking afterwards.
+        function _onUnitEnd() {
+          if (_tailPath) {
+            const path = _tailPath;
+            _tailPath = null;
+            audio.pause();
+            // tail_audio paths are stored manifest-relative (e.g. "audio/welcome.mp3").
+            // Apply the same root prefix used for vera.mp3 so playback resolves
+            // from /surface/ correctly.
+            tailAudio.src = AUDIO_BASE + path;
+            tailAudio.playbackRate = Math.max(0.5, Math.min(2.0, speedMul));
+            tailAudio.play().catch(() => {
+              _blocking = false; _unitId = null; dwellRemaining = 0;
+            });
+            return;
+          }
+          _blocking = false;
+          _unitId   = null;
+          dwellRemaining = 0;
+        }
+
+        // Don't pause at unit boundaries — let audio keep flowing.
+        // The next playUnit call will detect the natural continuation by position.
+        audio.addEventListener('timeupdate', () => {
+          if (!_blocking) return;
+          if (audio.currentTime >= _endTime) _onUnitEnd();
+        });
+
+        audio.addEventListener('ended', () => { _blocking = false; _unitId = null; });
+        audio.addEventListener('error', () => { _blocking = false; _unitId = null; _tailPath = null; });
+
+        tailAudio.addEventListener('ended', () => {
+          _blocking = false; _unitId = null; dwellRemaining = 0;
+        });
+        tailAudio.addEventListener('error', () => {
+          _blocking = false; _unitId = null;
+        });
+
+        function playUnit(unitId) {
+          if (!_enabled) return;
+          if (!manifest) { _pendingId = unitId; return; } // queue until fetch resolves
+          const entry = manifest[unitId];
+          if (!entry) return;
+
+          const targetStart = entry.start_ms / 1000;
+          // Natural continuation = audio is playing AND we're within 3s of target.
+          // Wide window because Vera leaves natural pauses between sentences —
+          // audio.currentTime can drift up to ~2s ahead of the next unit's start
+          // before the next playUnit fires. Tighter than this and we'd seek
+          // (audible click) on every line advance.
+          const continuingNaturally =
+            !audio.paused && Math.abs(audio.currentTime - targetStart) < 3.0;
+
+          _unitId   = unitId;
+          _endTime  = entry.end_ms / 1000;
+          _blocking = true;
+          _tailPath = entry.tail_audio || null;   // chain extra file after _endTime
+          audio.playbackRate = Math.max(0.5, Math.min(2.0, speedMul));
+
+          if (!continuingNaturally) {
+            audio.currentTime = targetStart;
+            if (!paused) {
+              audio.play().catch(() => { _blocking = false; _unitId = null; });
+            }
+          }
+        }
+
+        function pause()    { audio.pause(); tailAudio.pause(); }
+        function resume()   {
+          if (!_unitId) return;
+          // If tail audio is the active source (mid-tail), resume it; else resume main.
+          if (!tailAudio.paused || (tailAudio.currentTime > 0 && tailAudio.currentTime < tailAudio.duration)) {
+            tailAudio.play().catch(() => {});
+          } else {
+            audio.play().catch(() => {});
+          }
+        }
+        function setRate(r) {
+          const v = Math.max(0.5, Math.min(2.0, r));
+          audio.playbackRate     = v;
+          tailAudio.playbackRate = v;
+        }
+        function cancel()   {
+          audio.pause(); tailAudio.pause();
+          _blocking = false; _unitId = null; _pendingId = null; _tailPath = null;
+        }
+        function setEnabled(on) { _enabled = !!on; if (!_enabled) cancel(); }
+
+        function init() {
+          const btn = document.getElementById('btn-read-aloud');
+          btn.addEventListener('click', () => {
+            const next = !_enabled;
+            setEnabled(next);
+            btn.classList.toggle('active', next);
+            btn.setAttribute('aria-pressed', String(next));
+            if (next && UNITS.length && !paused) playUnit(UNITS[activeIdx].id);
+          });
+        }
+
+        // Polled from tick() every frame as a safety net — timeupdate doesn't
+        // always fire reliably after playbackRate changes.
+        function poll() {
+          if (_blocking && _endTime > 0 && !audio.paused && audio.currentTime >= _endTime) {
+            _onUnitEnd();
+          }
+        }
+
+        return {
+          playUnit, pause, resume, setRate, cancel, setEnabled, init, poll,
+          get enabled()  { return _enabled; },
+          get blocking() { return _blocking; },
+        };
+      })();
+
+      audioPlayer.init();
+
+      // Mobile heads-up overlay dismiss
+      (function () {
+        const ov  = document.getElementById('mobile-overlay');
+        const btn = document.getElementById('mobile-overlay-dismiss');
+        if (!ov || !btn) return;
+        btn.addEventListener('click', () => ov.classList.add('dismissed'));
+      })();
+
+      loadAll().catch((err) => {
+        console.error('load error', err);
+        document.body.innerHTML =
+          '<pre style="padding:2rem;font-family:monospace;color:#ff1493">Failed to load data: ' +
+          err.message +
+          '</pre>';
+      });
+    </script>
+  </body>
+</html>

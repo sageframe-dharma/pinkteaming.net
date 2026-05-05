@@ -1,22 +1,26 @@
 /* ════════════════════════════════════════════════════════════════
    Nav object — four-armed draggable navigation, shared across all
    pinkteaming.net pages. Auto-mounts on load. Per-page identity is
-   set via <html data-page="door|text|practice|reading">.
+   set via <html data-page="surface|text|practice|reading">.
 
    Pairs with nav.css. Each page just needs:
      <link rel="stylesheet" href="nav.css">
      <script src="nav.js" defer></script>
+
+   The visualization (formerly the root) now lives at /surface/. The
+   site root is a gateway page that drives the morph animation via
+   the public window.NavObject.navigate(id) API exposed below.
    ════════════════════════════════════════════════════════════════ */
 (function () {
   const ROUTES = {
-    door:     '/',
+    surface:  '/surface',
     text:     '/manifesto',
     practice: '/practice',
     reading:  '/reading',
   };
 
   const DESTINATIONS = [
-    { id: 'door',     label: 'DOOR',     baseAngle: 295, restRank: 0 },
+    { id: 'surface',  label: 'SURFACE',  baseAngle: 295, restRank: 0 },
     { id: 'text',     label: 'TEXT',     baseAngle: 30,  restRank: 1 },
     { id: 'reading',  label: 'READING',  baseAngle: 220, restRank: 2 },
     { id: 'practice', label: 'PRACTICE', baseAngle: 130, restRank: 3 },
@@ -28,16 +32,18 @@
   const STORAGE_KEY = 'pt.navobject.v1';
 
   // Resolve the active arm. Priority: <html data-page="...">, then
-  // pathname match, then default 'door'.
+  // pathname match, then default 'surface'.
   function resolvePageId() {
     const ds = (document.documentElement.dataset.page || '').toLowerCase();
     if (DESTINATIONS.find(d => d.id === ds)) return ds;
     const path = window.location.pathname.replace(/\.html$/, '').replace(/\/$/, '');
-    if (path === '' || path === '/index') return 'door';
+    if (path.endsWith('/surface') || path.endsWith('/door')) return 'surface';
     if (path.endsWith('/manifesto') || path.endsWith('/text')) return 'text';
     if (path.endsWith('/practice')) return 'practice';
     if (path.endsWith('/reading')) return 'reading';
-    return 'door';
+    // Root (the gateway) — start with the visitor "on" surface; the gateway
+    // script then morphs to the destination arm before redirecting.
+    return 'surface';
   }
 
   // ── Auto-mount the nav DOM ─────────────────────────────
@@ -290,8 +296,9 @@
   }
 
   let navigating = false;
-  function navigateTo(id) {
+  function navigateTo(id, opts) {
     if (navigating || id === active) return;
+    opts = opts || {};
     navigating = true;
     active = id;
     DESTINATIONS.forEach(d => {
@@ -299,7 +306,12 @@
     });
 
     const dur = parseInt(getCss('--nav-transition-duration')) || 400;
-    const nextAngles = rollAngles();
+    // The gateway page passes keepAngles:true so the morph only changes
+    // arm lengths, not orientation — avoids the visible angular shuffle
+    // when the morph is intentionally slow (e.g. 2.5s on the gateway).
+    const nextAngles = opts.keepAngles
+      ? Object.assign({}, angleState)
+      : rollAngles();
     animateArms(null, id, dur, 50, nextAngles);
 
     setTimeout(() => {
@@ -408,7 +420,16 @@
     catch (_) { return {}; }
   }
   function saveState(s) {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch (_) {}
+    try {
+      // Persist current arm orientations alongside position/active. This
+      // lets the next page render the star at the same angles the user
+      // last saw — no re-roll snap on page load. Without this, a slow
+      // morph (gateway → manifesto) would visibly re-shuffle on arrival.
+      const payload = Object.assign({}, s, {
+        angles: Object.assign({}, angleState),
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (_) {}
   }
 
   // ── Routing ───────────────────────────────────────────
@@ -421,6 +442,18 @@
   // ── Init ──────────────────────────────────────────────
   function init() {
     const saved = loadState();
+
+    // Restore arm angles if a prior page saved them. This is what makes
+    // a slow gateway morph land cleanly on /manifesto/ — same orientation,
+    // no re-shuffle. First-ever visit (no saved angles) still rolls fresh.
+    let hasSavedAngles = false;
+    if (saved.angles && typeof saved.angles === 'object') {
+      hasSavedAngles = DESTINATIONS.every(d => typeof saved.angles[d.id] === 'number');
+      if (hasSavedAngles) {
+        DESTINATIONS.forEach(d => { angleState[d.id] = saved.angles[d.id]; });
+      }
+    }
+
     if (typeof saved.x === 'number' && typeof saved.y === 'number') {
       const c = clampToViewport(saved.x, saved.y, false);
       saveState({ active, x: c.x, y: c.y });
@@ -439,13 +472,22 @@
       }
       setPos(dotX - halfW, dotY - halfH);
     }
-    renderArms(true);
+    renderArms(!hasSavedAngles);
   }
 
   window.addEventListener('resize', () => {
     const r = navEl.getBoundingClientRect();
     clampToViewport(r.left, r.top, true);
   });
+
+  // Public API — the gateway page (/) uses this to programmatically
+  // morph the star from SURFACE to TEXT before redirecting.
+  window.NavObject = {
+    navigate: navigateTo,
+    reroll: reroll,
+    getActive: () => active,
+    el: navEl,
+  };
 
   init();
 })();
