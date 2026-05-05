@@ -1583,7 +1583,7 @@ clamped to [2.0, 7.0]</code></pre>
 
         <!-- ── Demo 5 — Keyword pruning (verbatim from source) ── -->
         <div class="demo" id="demo-keywords" role="group" aria-label="Keyword pruning demo: toggle keywords on or off and watch the sky's saturation change.">
-          <div class="demo-caption">Toggle which words count. Watch the field. Too many triggers and the sky becomes noise. Too few and it goes silent. Calibration is the entire game.</div>
+          <div class="demo-caption">Each chip is a keyword the apparatus could recognize. Click one ON and the field flares with that word. Click another. Calibrated keywords (single percents) thicken the sky meaningfully; common words (<em>the</em>, <em>is</em>) drown the signal. Calibration is the entire game.</div>
           <canvas id="demo-kw-canvas" width="600" height="240"></canvas>
           <div class="demo-keywords-list" id="demo-kw-list"></div>
           <div class="demo-stats" id="demo-kw-stats"></div>
@@ -1674,29 +1674,37 @@ clamped to [2.0, 7.0]</code></pre>
           function activeRate() {
             return KEYWORDS.filter(k => k.included).reduce((acc, k) => acc + k.pct, 0);
           }
-          function spawnFlare(t) {
-            const rate = activeRate();
-            if (rate === 0) return;
-            // Pick a random ACTIVE keyword to attribute this flare to.
-            // The flare is now LITERAL: you see WHICH word fired. Toggle
-            // 'the' on and you'll see "the" plastered everywhere.
-            const actives = KEYWORDS.filter(k => k.included);
-            const word = actives[Math.floor(Math.random() * actives.length)].word;
+          // Place a flare on the canvas. If `forcedWord` is given, this is a
+          // CLICK-DRIVEN flare (the chip you just turned on); otherwise it's
+          // an autonomous flare and we attribute it to a random active word.
+          // Click-driven flares are the demo's main interactive surface —
+          // they make the cause-effect visible: you click 'the', "the"
+          // appears on the field NOW.
+          function placeFlare(t, forcedWord) {
+            let word = forcedWord;
+            if (!word) {
+              const actives = KEYWORDS.filter(k => k.included);
+              if (actives.length === 0) return;
+              word = actives[Math.floor(Math.random() * actives.length)].word;
+            }
             flares.push({
               x: Math.random() * W,
               y: Math.random() * H,
               bornAt: t,
               word
             });
-            // Spawn rate is anchored to the manifesto reading rate but
-            // scaled WAY down (rate × 0.0018). With only 2 keywords on
-            // (10% rate) you get a flare every ~55s — the eye watches
-            // each lifecycle with NOTHING else competing for attention.
-            // Toggle more keywords on to thicken the field.
-            //   2 on   (10%)  → 55s spawn, 0.22 simul
-            //   20 on  (37%)  → 15s spawn, 0.80 simul (calibrated)
-            //   +the  (132%)  →  4.2s   , 2.86 simul (noise)
-            //   all    (242%) →  2.3s   , 5.20 simul (chaos)
+          }
+          function spawnFlare(t) {
+            const rate = activeRate();
+            if (rate === 0) return;
+            placeFlare(t);
+            // Autonomous spawn rate provides ambient texture; the user's
+            // CLICKS on chips are the primary demonstration. With clicks
+            // driving the visible action, the timer can be slow.
+            //   2 on   (10%)  → 55s spawn, mostly silent ambient
+            //   20 on  (37%)  → 15s spawn, calibrated thickening
+            //   +the  (132%)  →  4.2s    , the strobe arrives on its own
+            //   all    (242%) →  2.3s    , chaos sustains itself
             // Floor 0.015 → ceiling 60s; min interval 0.5s.
             const flaresPerSec = Math.max(0.015, rate * 0.0018);
             nextSpawn = t + Math.max(0.5, Math.min(60, 1 / flaresPerSec));
@@ -1767,7 +1775,28 @@ clamped to [2.0, 7.0]</code></pre>
             listEl.querySelectorAll('button').forEach(b => {
               b.addEventListener('click', () => {
                 const i = +b.dataset.i;
-                KEYWORDS[i].included = !KEYWORDS[i].included;
+                const k = KEYWORDS[i];
+                k.included = !k.included;
+                const t = (performance.now() - t0) / 1000;
+                if (k.included) {
+                  // Toggling ON: place a flare with this exact word RIGHT
+                  // NOW, so the click is the demonstration. Add 1–2 extras
+                  // for a higher-frequency word so 'the' immediately reads
+                  // as "this is too much".
+                  placeFlare(t, k.word);
+                  if (k.pct > 50) { placeFlare(t, k.word); placeFlare(t, k.word); }
+                  else if (k.pct > 15) placeFlare(t, k.word);
+                } else {
+                  // Toggling OFF: jump any live flares of this word into
+                  // their decay phase, so they visibly fade out instead of
+                  // playing on while the chip says "off".
+                  const decayStart = FLARE_RISE + FLARE_HOLD;
+                  for (const f of flares) {
+                    if (f.word !== k.word) continue;
+                    const age = t - f.bornAt;
+                    if (age < decayStart) f.bornAt = t - decayStart;
+                  }
+                }
                 renderList();
                 updateStats();
               });
