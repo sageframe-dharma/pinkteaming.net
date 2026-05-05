@@ -941,9 +941,292 @@ clamped to [2.0, 7.0]</code></pre>
     </div>
   </section>
 
-  <!-- ═══ Chunks 4–5 will append additional <section class="band stretch"> blocks here:
-           §4 (sky) · §5 (discipline)
-           a pink panel-closing, the footer-note stretch, and the colophon.
+  <!-- ── Cream stretch: §4 (the sky, what radiates outward) ─── -->
+  <section class="band stretch">
+    <div class="band-inner">
+      <article class="prose">
+
+        <header class="section-head" id="section-4">
+          <span class="roman">Section 04</span>
+          <span class="label">The sky, what radiates outward.</span>
+          <span class="level">Level 3 · Two demos, real physics</span>
+        </header>
+
+        <p class="first no-indent">Above the surface band there is a quiet field with small black dots arranged in two concentric rings. Occasionally the field ripples—concentric waves spreading from one of the dots, or from a brief flare somewhere unanchored. This is the <em>sky</em>.</p>
+
+        <p>The sky is built on the physics of wave interference. Each dot in the field is a <em>source</em>—a fixed location that, when active, emits waves outward in concentric circles. Where two waves meet, they amplify each other (constructive interference) or cancel each other out (destructive interference). The visual result is a field of overlapping ripples in subtle motion.</p>
+
+        <p>There are two kinds of sources. <em>Permanent</em> sources are the twelve named structures of the manifesto: five Declarations on an inner ring, seven Vows on an outer ring. They sit there dimly all the time, marking the geometry of the discipline. When the active line is <em>inside</em> one of those structures—when you are reading a sentence within Vow 4's body, say—that source brightens, its waves intensify, and a small label appears next to it. The slow, structural pulse of the sky tells you which Declaration or Vow you are currently inside.</p>
+
+        <p><em>Transient</em> sources are keyword flares. The manifesto has twenty loaded words—<em>territory</em>, <em>encounter</em>, <em>interiority</em>, <em>ambiguity</em>, <em>participatory</em>, <em>durational</em>, a handful of others—that fire briefly when they appear in the active line. A keyword flare spawns at a random position in the sky, flares for a few seconds, and fades.</p>
+
+        <h3>What attention looks like as a field</h3>
+
+        <p class="no-indent">The wave-interference math is doing something you can watch directly. Two sources, oscillating. A field of points each summing the contributions from both. Where the waves arrive in phase, the field brightens (constructive). Where they arrive out of phase, it cancels (destructive).</p>
+
+        <!-- ── Demo 4 — Wave interference (verbatim from source) ── -->
+        <div class="demo" id="demo-interference" role="group" aria-label="Wave interference demo: adjust wavelength, speed, and number of sources to see how the field changes.">
+          <div class="demo-caption">Two sources. Move the sliders. Where the rings reinforce, the field concentrates. Where they cancel, it goes quiet.</div>
+          <canvas id="demo-int-canvas" width="600" height="320"></canvas>
+          <div class="demo-controls demo-sliders">
+            <label for="demo-int-lam-slider">wavelength <span id="demo-int-lam">48</span></label>
+            <input type="range" id="demo-int-lam-slider" min="20" max="100" value="48" step="1" aria-label="Wavelength: 20 to 100">
+            <label for="demo-int-spd-slider">speed <span id="demo-int-spd">50</span></label>
+            <input type="range" id="demo-int-spd-slider" min="10" max="120" value="50" step="1" aria-label="Speed: 10 to 120">
+            <label for="demo-int-n-slider">sources <span id="demo-int-n">2</span></label>
+            <input type="range" id="demo-int-n-slider" min="1" max="3" value="2" step="1" aria-label="Number of sources: 1, 2, or 3">
+          </div>
+        </div>
+        <script>
+        (function () {
+          const canvas = document.getElementById('demo-int-canvas');
+          const ctx = canvas.getContext('2d');
+          const lamSlider = document.getElementById('demo-int-lam-slider');
+          const spdSlider = document.getElementById('demo-int-spd-slider');
+          const nSlider = document.getElementById('demo-int-n-slider');
+          const lamLabel = document.getElementById('demo-int-lam');
+          const spdLabel = document.getElementById('demo-int-spd');
+          const nLabel = document.getElementById('demo-int-n');
+          const W = canvas.width, H = canvas.height;
+          const CELL = 4;
+          const bufW = Math.ceil(W / CELL);
+          const bufH = Math.ceil(H / CELL);
+          const buf = ctx.createImageData(bufW, bufH);
+          const tmp = document.createElement('canvas');
+          tmp.width = bufW; tmp.height = bufH;
+          const tmpCtx = tmp.getContext('2d');
+          const t0 = performance.now();
+          let raf = null;
+
+          function sourcesFor(n) {
+            if (n === 1) return [{ x: W * 0.5,  y: H * 0.5 }];
+            if (n === 2) return [{ x: W * 0.30, y: H * 0.5 }, { x: W * 0.70, y: H * 0.5 }];
+            return [
+              { x: W * 0.25, y: H * 0.4  },
+              { x: W * 0.75, y: H * 0.4  },
+              { x: W * 0.50, y: H * 0.75 }
+            ];
+          }
+
+          function draw() {
+            const t = (performance.now() - t0) / 1000;
+            const lam = +lamSlider.value;
+            const spd = +spdSlider.value;
+            const n   = +nSlider.value;
+            const srcs = sourcesFor(n);
+            const k = (2 * Math.PI) / lam;
+            const data = buf.data;
+            for (let y = 0; y < bufH; y++) {
+              for (let x = 0; x < bufW; x++) {
+                let sum = 0;
+                const px = x * CELL, py = y * CELL;
+                for (const s of srcs) {
+                  const dx = px - s.x, dy = py - s.y;
+                  const d = Math.sqrt(dx * dx + dy * dy);
+                  sum += Math.cos(k * d - k * spd * t) / (1 + d * 0.012);
+                }
+                const v = Math.tanh(sum * 0.6);
+                const i = (y * bufW + x) * 4;
+                const bg = 250;
+                if (v > 0) {
+                  data[i]     = Math.round(bg * (1 - v * 0.4) + 255 * v * 0.4);
+                  data[i + 1] = Math.round(bg * (1 - v * 0.4) +  20 * v * 0.4);
+                  data[i + 2] = Math.round(bg * (1 - v * 0.4) + 147 * v * 0.4);
+                } else {
+                  const m = -v * 0.25;
+                  data[i]     = Math.round(bg * (1 - m));
+                  data[i + 1] = Math.round(bg * (1 - m));
+                  data[i + 2] = Math.round(bg * (1 - m));
+                }
+                data[i + 3] = 255;
+              }
+            }
+            tmpCtx.putImageData(buf, 0, 0);
+            ctx.drawImage(tmp, 0, 0, bufW, bufH, 0, 0, W, H);
+            ctx.fillStyle = '#000';
+            for (const s of srcs) {
+              ctx.beginPath();
+              ctx.arc(s.x, s.y, 3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            raf = requestAnimationFrame(draw);
+          }
+
+          function syncLabels() {
+            lamLabel.textContent = lamSlider.value;
+            spdLabel.textContent = spdSlider.value;
+            nLabel.textContent   = nSlider.value;
+          }
+          [lamSlider, spdSlider, nSlider].forEach(s => s.addEventListener('input', syncLabels));
+          syncLabels();
+          draw();
+
+          // Expose a pause/resume API so chunk 5's IO throttling can hook in.
+          window.__demoInterference = {
+            pause:  () => { if (raf) { cancelAnimationFrame(raf); raf = null; } },
+            resume: () => { if (!raf) draw(); }
+          };
+        })();
+        </script>
+
+        <p>Drag the wavelength tighter—the rings pack denser, the interference pattern becomes intricate. Drag it wider—the field becomes broad and slow, like swell. Add a third source—the field stops being predictable; the interactions multiply. Three sources is enough to make the field hard to read, which is the field state of a working session at hour three: many things resonating, partially canceling, partially reinforcing, the body holding all of it without being able to name any single source.</p>
+
+        <p>Reading is not a single-event operation. Each new sentence arrives into a field shaped by what came before. Models do not read this way—each forward pass is contextually fresh, weighted by attention but not somatically accumulated. The practitioner does. The page's actual sky does this calculation every frame, with up to twelve permanent sources and twenty transient ones, accumulating across eight minutes. What you see overhead is what holding-the-reading actually looks like as a system. The Buddhist word for it is <em>interbeing</em>—Thich Nhat Hanh's claim that nothing exists independently, that the paper contains the tree contains the rain contains the sun. Meaning works the same way. Each new sentence does not arrive into a vacuum. It arrives into a field already occupied by what you have been reading, and it interferes with that field, and the resulting pattern is what you encounter as understanding.</p>
+
+        <aside class="aside">
+          <h4>Why the sky's keywords aren't decoration</h4>
+          <p>The list of words that trigger flares was deliberately pruned. Twenty words, drawn from the manifesto's vocabulary, each appearing sparingly enough that its appearances feel pointed. The word <em>model</em> was excluded—it appears in 22% of the manifesto's units, and if every "model" fired a flare the sky would read as constant noise. The triggers fire about as often as a footnote—frequently enough to be present, rarely enough to mark a moment.</p>
+        </aside>
+
+        <h3>Calibration is the entire game</h3>
+
+        <p class="no-indent">You are given a list of candidate keywords with their actual frequency in the manifesto. You toggle which ones fire flares. Above a certain saturation, the field becomes constant noise. Below a certain threshold, it goes silent. There is a narrow band where the signal is meaningful.</p>
+
+        <!-- ── Demo 5 — Keyword pruning (verbatim from source) ── -->
+        <div class="demo" id="demo-keywords" role="group" aria-label="Keyword pruning demo: toggle keywords on or off and watch the sky's saturation change.">
+          <div class="demo-caption">Toggle which words count. Watch the field. Too many triggers and the sky becomes noise. Too few and it goes silent. Calibration is the entire game.</div>
+          <canvas id="demo-kw-canvas" width="600" height="240"></canvas>
+          <div class="demo-keywords-list" id="demo-kw-list"></div>
+          <div class="demo-stats" id="demo-kw-stats"></div>
+        </div>
+        <script>
+        (function () {
+          const KEYWORDS = [
+            { word: "model",         pct: 22, included: false }, // saturating — left out on purpose
+            { word: "pattern",       pct:  5, included: true  },
+            { word: "encounter",     pct:  5, included: true  },
+            { word: "ambiguity",     pct:  4, included: true  },
+            { word: "AI",            pct:  8, included: false }, // also too frequent
+            { word: "territory",     pct:  1, included: true  },
+            { word: "interiority",   pct:  1, included: true  },
+            { word: "durational",    pct:  1, included: true  },
+            { word: "participatory", pct:  1, included: true  },
+            { word: "consumptive",   pct:  1, included: true  },
+            { word: "the",           pct: 95, included: false }, // pure noise demonstrator
+            { word: "is",            pct: 80, included: false }, // pure noise demonstrator
+            { word: "door",          pct:  3, included: true  },
+            { word: "welcome",       pct:  1, included: true  },
+            { word: "profit",        pct:  2, included: true  }
+          ];
+          const canvas   = document.getElementById('demo-kw-canvas');
+          const ctx      = canvas.getContext('2d');
+          const listEl   = document.getElementById('demo-kw-list');
+          const statsEl  = document.getElementById('demo-kw-stats');
+          const W = canvas.width, H = canvas.height;
+          const CELL = 4;
+          const bufW = Math.ceil(W / CELL), bufH = Math.ceil(H / CELL);
+          const buf = ctx.createImageData(bufW, bufH);
+          const tmp = document.createElement('canvas');
+          tmp.width = bufW; tmp.height = bufH;
+          const tmpCtx = tmp.getContext('2d');
+          const t0 = performance.now();
+          let flares = []; // {x, y, bornAt}
+          let nextSpawn = 0.5;
+          let raf = null;
+
+          function activeRate() {
+            return KEYWORDS.filter(k => k.included).reduce((acc, k) => acc + k.pct, 0);
+          }
+          function spawnFlare(t) {
+            const rate = activeRate();
+            if (rate === 0) return;
+            flares.push({ x: Math.random() * W, y: Math.random() * H, bornAt: t });
+            nextSpawn = t + Math.max(0.05, 1.5 - rate * 0.013);
+          }
+          function draw() {
+            const t = (performance.now() - t0) / 1000;
+            if (t > nextSpawn) spawnFlare(t);
+            flares = flares.filter(f => t - f.bornAt < 2.5);
+            const k = (2 * Math.PI) / 36;
+            const spd = 60;
+            const data = buf.data;
+            for (let y = 0; y < bufH; y++) {
+              for (let x = 0; x < bufW; x++) {
+                let sum = 0;
+                const px = x * CELL, py = y * CELL;
+                for (const f of flares) {
+                  const age = t - f.bornAt;
+                  const env = Math.max(0, 1 - age / 2.5);
+                  const dx = px - f.x, dy = py - f.y;
+                  const d = Math.sqrt(dx * dx + dy * dy);
+                  if (d > age * spd * 1.5) continue;
+                  sum += env * Math.cos(k * d - k * spd * age) / (1 + d * 0.018);
+                }
+                const v = Math.tanh(sum * 0.5);
+                const i = (y * bufW + x) * 4;
+                const bg = 250;
+                if (v > 0) {
+                  data[i]     = Math.round(bg * (1 - v * 0.4) + 255 * v * 0.4);
+                  data[i + 1] = Math.round(bg * (1 - v * 0.4) +  20 * v * 0.4);
+                  data[i + 2] = Math.round(bg * (1 - v * 0.4) + 147 * v * 0.4);
+                } else {
+                  const m = -v * 0.2;
+                  data[i]     = Math.round(bg * (1 - m));
+                  data[i + 1] = Math.round(bg * (1 - m));
+                  data[i + 2] = Math.round(bg * (1 - m));
+                }
+                data[i + 3] = 255;
+              }
+            }
+            tmpCtx.putImageData(buf, 0, 0);
+            ctx.drawImage(tmp, 0, 0, bufW, bufH, 0, 0, W, H);
+            raf = requestAnimationFrame(draw);
+          }
+          function renderList() {
+            listEl.innerHTML = KEYWORDS.map((k, i) => {
+              const cls    = k.included ? 'included' : '';
+              const noise  = k.pct > 15 ? ' (saturates)' : '';
+              const silent = k.pct < 1  ? ' (rare)'      : '';
+              return `<button class="demo-kw-chip ${cls}" data-i="${i}" aria-pressed="${k.included}">${k.word} <span>${k.pct}%${noise}${silent}</span></button>`;
+            }).join('');
+            listEl.querySelectorAll('button').forEach(b => {
+              b.addEventListener('click', () => {
+                const i = +b.dataset.i;
+                KEYWORDS[i].included = !KEYWORDS[i].included;
+                renderList();
+                updateStats();
+              });
+            });
+          }
+          function updateStats() {
+            const n = KEYWORDS.filter(k => k.included).length;
+            const rate = activeRate();
+            let verdict;
+            if (rate < 3)       verdict = "silent—no signal";
+            else if (rate < 25) verdict = "calibrated—meaningful";
+            else if (rate < 60) verdict = "saturating—losing signal";
+            else                verdict = "noise—no signal";
+            statsEl.innerHTML = `${n} keywords active · field saturation ${rate}% · <strong>${verdict}</strong>`;
+          }
+          renderList();
+          updateStats();
+          draw();
+
+          window.__demoKeywords = {
+            pause:  () => { if (raf) { cancelAnimationFrame(raf); raf = null; } },
+            resume: () => { if (!raf) draw(); }
+          };
+        })();
+        </script>
+
+        <p>Try it: turn on <em>the</em> and <em>is</em>. The field becomes a constant strobe. Every frame is a flare. The sky carries no information because everything is signal. Now turn them off and turn off <em>pattern</em>, <em>encounter</em>, and <em>ambiguity</em> too. The field goes mostly quiet. Almost nothing fires. The sky carries no information because almost nothing is signal. The page's actual twenty are pruned to sit in the narrow band where appearances feel like footnotes—present, but pointed.</p>
+
+        <p>The lesson generalizes. Every interpretive system has a vocabulary it is tuned to. Red teamers look for jailbreak phrases. Mech interp researchers look for activation patterns. Pink teaming's signal vocabulary is curated by hand, with full knowledge that the curation is the entire game. The clinician decides which symptoms count as signal. The teacher decides which student behaviors warrant attention. The discipline is the disciplined refusal to be either oversaturated or starved.</p>
+
+        <aside class="aside">
+          <p>The wave physics behind the sky is a close cousin to the resonance field on <a href="https://atmarcus.net/" target="_blank" rel="noopener">atmarcus.net</a>, which uses the same engine to render a different argument. For a deeper account of the math itself—wave equations, interference, the cosine, the buffer, the frame loop—see <a href="https://atmarcus.net/about-the-hero" target="_blank" rel="noopener">How the Resonance Field Works</a>, where every step is laid out in code.</p>
+        </aside>
+
+      </article>
+    </div>
+  </section>
+
+  <!-- ═══ Chunk 5 will append:
+           §5 (discipline) cream stretch
+           pink panel-closing
+           cream stretch (footer note)
+           colophon
+           IntersectionObserver throttling for demos 4 & 5
        ═══ -->
 
 </div>
