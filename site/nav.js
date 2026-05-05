@@ -53,6 +53,34 @@
   navEl.appendChild(svgEl);
   document.body.appendChild(navEl);
 
+  // ── Mobile hamburger nav (visibility toggled by CSS) ───
+  const mobileNav = document.createElement('div');
+  mobileNav.className = 'mobile-nav';
+  mobileNav.innerHTML = `
+    <button class="mobile-nav-toggle" aria-label="Open navigation" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="mobile-nav-panel" aria-hidden="true">
+      ${DESTINATIONS.map(d => `<a href="${ROUTES[d.id]}" data-id="${d.id}">${d.label}</a>`).join('')}
+    </nav>`;
+  document.body.appendChild(mobileNav);
+  const _mToggle = mobileNav.querySelector('.mobile-nav-toggle');
+  const _mPanel  = mobileNav.querySelector('.mobile-nav-panel');
+  _mToggle.addEventListener('click', () => {
+    const open = mobileNav.classList.toggle('open');
+    _mToggle.setAttribute('aria-expanded', String(open));
+    _mPanel.setAttribute('aria-hidden', String(!open));
+  });
+  // Mark the active route in the panel
+  const _activeId = (function () {
+    const ds = (document.documentElement.dataset.page || '').toLowerCase();
+    if (DESTINATIONS.find(d => d.id === ds)) return ds;
+    return 'door';
+  })();
+  mobileNav.querySelectorAll('a').forEach(a => {
+    if (a.dataset.id === _activeId) a.classList.add('active');
+  });
+
   let active = resolvePageId();
 
   // ── Geometry ──────────────────────────────────────────

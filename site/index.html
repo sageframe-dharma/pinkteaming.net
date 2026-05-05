@@ -10,8 +10,8 @@
       href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="nav.css" />
-    <script src="nav.js" defer></script>
+    <link rel="stylesheet" href="nav.css?v=2" />
+    <script src="nav.js?v=2" defer></script>
     <style>
       :root {
         --paper: #fafaf7;
@@ -507,7 +507,7 @@
         color: var(--pink);
       }
 
-      @media (max-width: 900px) {
+      @media (max-width: 900px) and (min-width: 769px) {
         .shell {
           grid-template-columns: 50% 50%;
         }
@@ -519,9 +519,136 @@
           font-size: clamp(1.3rem, 4vw, 2.2rem);
         }
       }
+
+      /* ── Mobile (≤768px): reader-only, no viz column ──────────── */
+      @media (max-width: 768px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+        .col-viz { display: none; }
+        .col-text { width: 100vw; }
+        .line {
+          font-size: 1.05rem;
+          max-width: none;
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+        .scroll-stack {
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+        .hero-line {
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+        .hero-line .text {
+          font-size: clamp(1.05rem, 4.2vw, 1.5rem);
+          white-space: normal;
+          line-height: 1.2;
+        }
+        .surface-band { height: 5.4rem; }
+        .hero-line { height: 5.4rem; }
+        .chip { font-size: 0.55rem; padding: 0.4rem 0.7rem; }
+        .foot {
+          left: 0.75rem;
+          bottom: 0.75rem;
+          gap: 0.4rem;
+        }
+        .speed-ctl, .btn-pause, .btn-read-aloud, .btn-top {
+          font-size: 0.55rem;
+        }
+        .speed-ctl { height: 1.8rem; }
+        .speed-ctl .sval { min-width: 2.3rem; }
+        .speed-ctl .sbtn { width: 1.5rem; }
+        .byline-link {
+          right: 0.75rem;
+          bottom: 0.75rem;
+          font-size: 0.55rem;
+          padding: 0.4rem 0.7rem;
+        }
+        .section-tag { font-size: 0.42rem; }
+      }
+
+      /* ── Mobile heads-up overlay (dismissible) ──────────────── */
+      .mobile-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: rgba(250, 250, 247, 0.97);
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1.5rem;
+      }
+      .mobile-overlay-card {
+        max-width: 28rem;
+        background: var(--paper);
+        border: 1.5px solid var(--ink);
+        padding: 1.6rem 1.4rem 1.4rem;
+        font-family: var(--font-serif);
+        line-height: 1.45;
+      }
+      .mobile-overlay-card .tag {
+        font-family: var(--font-mono);
+        font-size: 0.6rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--pink);
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 0.9rem;
+      }
+      .mobile-overlay-card .tag::before {
+        content: '';
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background: var(--pink);
+        margin-right: 0.45rem;
+      }
+      .mobile-overlay-card h2 {
+        font-family: var(--font-sans);
+        font-weight: 800;
+        font-size: 1.25rem;
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+        margin-bottom: 0.7rem;
+      }
+      .mobile-overlay-card p {
+        font-size: 0.95rem;
+        color: var(--ink);
+        margin-bottom: 0.9rem;
+      }
+      .mobile-overlay-card button {
+        all: unset;
+        cursor: pointer;
+        margin-top: 0.5rem;
+        padding: 0.55rem 1rem;
+        background: var(--pink);
+        border: 1.5px solid var(--ink);
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink);
+      }
+      @media (max-width: 768px) {
+        .mobile-overlay { display: flex; }
+        .mobile-overlay.dismissed { display: none; }
+      }
     </style>
   </head>
   <body>
+    <div class="mobile-overlay" id="mobile-overlay">
+      <div class="mobile-overlay-card">
+        <span class="tag">Mobile · Beta</span>
+        <h2>The reader is built for a wider screen.</h2>
+        <p>The full apparatus — the resonance field, the vector cloud, the synchronized reading view — needs the room a desktop or tablet provides.</p>
+        <p>The mobile version is in beta. You can still read along below, but the experience is meant for a larger canvas.</p>
+        <button id="mobile-overlay-dismiss">Read on anyway</button>
+      </div>
+    </div>
+
     <div class="chip"><span class="dot"></span>Pink Teaming · A Manifesto</div>
 
     <div class="foot">
@@ -3411,10 +3538,13 @@
           if (!entry) return;
 
           const targetStart = entry.start_ms / 1000;
-          // Natural continuation = audio is currently playing AND its position is
-          // within half a second of the target start. Otherwise we seek.
+          // Natural continuation = audio is playing AND we're within 3s of target.
+          // Wide window because Vera leaves natural pauses between sentences —
+          // audio.currentTime can drift up to ~2s ahead of the next unit's start
+          // before the next playUnit fires. Tighter than this and we'd seek
+          // (audible click) on every line advance.
           const continuingNaturally =
-            !audio.paused && Math.abs(audio.currentTime - targetStart) < 0.5;
+            !audio.paused && Math.abs(audio.currentTime - targetStart) < 3.0;
 
           _unitId   = unitId;
           _endTime  = entry.end_ms / 1000;
@@ -3478,6 +3608,14 @@
       })();
 
       audioPlayer.init();
+
+      // Mobile heads-up overlay dismiss
+      (function () {
+        const ov  = document.getElementById('mobile-overlay');
+        const btn = document.getElementById('mobile-overlay-dismiss');
+        if (!ov || !btn) return;
+        btn.addEventListener('click', () => ov.classList.add('dismissed'));
+      })();
 
       loadAll().catch((err) => {
         console.error('load error', err);

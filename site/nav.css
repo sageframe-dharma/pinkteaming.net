@@ -76,3 +76,66 @@
 .nav-object.dragging .center-hit { pointer-events: none; }
 .nav-object .arm-hit { fill: transparent; cursor: pointer; pointer-events: all; }
 .nav-object.dragging .arm-hit { pointer-events: none; }
+
+/* ── Mobile hamburger nav ─────────────────────────────────────
+   Hidden on desktop, shown on small screens; star nav is hidden. */
+.mobile-nav { display: none; }
+
+@media (max-width: 768px) {
+  .nav-object { display: none !important; }
+  .mobile-nav {
+    display: block;
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 50;
+  }
+  .mobile-nav-toggle {
+    width: 44px;
+    height: 44px;
+    padding: 10px 8px;
+    background: var(--paper, #fafaf7);
+    border: 1px solid var(--ink, #000);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: stretch;
+  }
+  .mobile-nav-toggle span {
+    display: block;
+    height: 2px;
+    background: var(--ink, #000);
+    transition: transform 200ms ease, opacity 200ms ease;
+  }
+  .mobile-nav.open .mobile-nav-toggle span:nth-child(1) { transform: translateY(9px) rotate(45deg); }
+  .mobile-nav.open .mobile-nav-toggle span:nth-child(2) { opacity: 0; }
+  .mobile-nav.open .mobile-nav-toggle span:nth-child(3) { transform: translateY(-9px) rotate(-45deg); }
+  .mobile-nav-panel {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    min-width: 180px;
+    background: var(--paper, #fafaf7);
+    border: 1px solid var(--ink, #000);
+    display: none;
+    flex-direction: column;
+  }
+  .mobile-nav.open .mobile-nav-panel { display: flex; }
+  .mobile-nav-panel a {
+    display: block;
+    padding: 0.85rem 1rem;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink, #000);
+    text-decoration: none;
+    border-bottom: 1px solid var(--ink, #000);
+  }
+  .mobile-nav-panel a:last-child { border-bottom: none; }
+  .mobile-nav-panel a.active {
+    background: var(--pink, #ff1493);
+    color: var(--ink, #000);
+  }
+}
