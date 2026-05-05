@@ -1583,7 +1583,7 @@ clamped to [2.0, 7.0]</code></pre>
 
         <!-- ── Demo 5 — Keyword pruning (verbatim from source) ── -->
         <div class="demo" id="demo-keywords" role="group" aria-label="Keyword pruning demo: toggle keywords on or off and watch the sky's saturation change.">
-          <div class="demo-caption">Each chip is a keyword the apparatus could recognize. Click one ON and the field flares with that word. Click another. Calibrated keywords (single percents) thicken the sky meaningfully; common words (<em>the</em>, <em>is</em>) drown the signal. Calibration is the entire game.</div>
+          <div class="demo-caption">Each chip is a keyword. Click one and the field flares with that word — burst size scales as the <em>natural log</em> of frequency, the same curve language itself is built on (a few words dominate; the rest are rare). Without the log, <em>the</em> at 95% would outweigh <em>pattern</em> at 5% by twenty to one; with it, the gap reads as <em>several</em> rather than <em>orders of magnitude</em>. One ripple for a 1% trigger; ten for <em>the</em>. Calibration is the entire game.</div>
           <canvas id="demo-kw-canvas" width="600" height="240"></canvas>
           <div class="demo-keywords-list" id="demo-kw-list"></div>
           <div class="demo-stats" id="demo-kw-stats"></div>
