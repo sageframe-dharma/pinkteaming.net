@@ -10,8 +10,8 @@
       href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="nav.css?v=2" />
-    <script src="nav.js?v=2" defer></script>
+    <link rel="stylesheet" href="nav.css?v=3" />
+    <script src="nav.js?v=3" defer></script>
     <style>
       :root {
         --paper: #fafaf7;
@@ -551,7 +551,7 @@
         .chip { font-size: 0.55rem; padding: 0.4rem 0.7rem; }
         .foot {
           left: 0.75rem;
-          bottom: 0.75rem;
+          bottom: calc(0.75rem + 2.4rem);  /* above the byline row */
           gap: 0.4rem;
         }
         .speed-ctl, .btn-pause, .btn-read-aloud, .btn-top {
@@ -560,11 +560,17 @@
         .speed-ctl { height: 1.8rem; }
         .speed-ctl .sval { min-width: 2.3rem; }
         .speed-ctl .sbtn { width: 1.5rem; }
+        /* Byline on its own row below the foot controls, white like the others */
         .byline-link {
+          left: 0.75rem;
           right: 0.75rem;
           bottom: 0.75rem;
           font-size: 0.55rem;
           padding: 0.4rem 0.7rem;
+          background: var(--paper);
+          color: var(--ink);
+          border: 1px solid var(--ink);
+          justify-content: center;
         }
         .section-tag { font-size: 0.42rem; }
       }
@@ -3339,8 +3345,10 @@
         if (!paused && !audioPlayer.blocking) {
           dwellRemaining -= dt * speedMul;
           if (dwellRemaining <= 0) {
-            // Advance through this unit's fragments before moving on to the next unit.
-            if (activeFragmentIdx + 1 < activeFragments.length) {
+            // When audio is on, advance unit-by-unit (skip remaining sub-fragments)
+            // so visual stays in lockstep with audio. Otherwise step through fragments.
+            const skipFragments = audioPlayer.enabled;
+            if (!skipFragments && activeFragmentIdx + 1 < activeFragments.length) {
               setActive(activeIdx, activeFragmentIdx + 1);
             } else {
               const next = activeIdx + 1;
