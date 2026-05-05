@@ -1,0 +1,77 @@
+/* ════════════════════════════════════════════════════════════════
+   Nav object — four-armed draggable navigation. Loaded by every
+   pinkteaming.net page; pairs with nav.js. The wrapper div is
+   created by nav.js, but its styles live here.
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+  --nav-container-size: 220px;
+  --nav-arm-stroke-active: 1.5px;
+  --nav-arm-stroke-inactive: 1px;
+  --nav-transition-duration: 400ms;
+  --nav-label-size: 0.65rem;
+  --nav-easing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-object {
+  position: fixed;
+  z-index: 40;
+  user-select: none;
+  cursor: grab;
+  background: transparent;
+  border: none;
+  /* Wrapper is the SHAPE size — drag clamping uses these bounds so the
+     mark sits flush against viewport edges. Labels render outside via
+     an oversized SVG centered on this box; they overflow visibly. */
+  width: var(--nav-container-size);
+  height: var(--nav-container-size);
+  overflow: visible;
+}
+.nav-object.dragging { cursor: grabbing; }
+.nav-object.snapping {
+  transition: left 200ms var(--nav-easing), top 200ms var(--nav-easing);
+}
+.nav-object svg {
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--nav-container-size) + 140px);
+  height: calc(var(--nav-container-size) + 140px);
+  transform: translate(-50%, -50%);
+  overflow: visible;
+  pointer-events: none;
+}
+.nav-object svg > * { pointer-events: auto; }
+
+.nav-object .star-poly {
+  fill: var(--pink);
+  stroke: var(--ink);
+  stroke-width: var(--nav-arm-stroke-inactive);
+  stroke-linejoin: miter;
+  stroke-linecap: square;
+  transition:
+    stroke-width var(--nav-transition-duration) var(--nav-easing),
+    stroke var(--nav-transition-duration) var(--nav-easing),
+    fill var(--nav-transition-duration) var(--nav-easing);
+}
+.nav-object .star-poly.has-active { stroke-width: var(--nav-arm-stroke-active); }
+.nav-object .label-bg { fill: var(--paper); fill-opacity: 1; }
+.nav-object .arm-label {
+  font-family: var(--font-mono);
+  font-size: var(--nav-label-size);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  fill: var(--ink);
+  font-weight: 400;
+  opacity: 0.25;
+  transition:
+    opacity var(--nav-transition-duration) var(--nav-easing),
+    font-weight var(--nav-transition-duration) var(--nav-easing);
+}
+.nav-object .arm-label.active { opacity: 1; font-weight: 500; }
+.nav-object .center-dot { fill: var(--ink); }
+.nav-object .center-hit { fill: transparent; cursor: pointer; pointer-events: all; }
+.nav-object.dragging .center-hit { pointer-events: none; }
+.nav-object .arm-hit { fill: transparent; cursor: pointer; pointer-events: all; }
+.nav-object.dragging .arm-hit { pointer-events: none; }

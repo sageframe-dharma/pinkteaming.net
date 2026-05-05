@@ -1,2 +1,4 @@
 .venv/
 design/initial_prompt.md
+design/audio/
+.DS_Store

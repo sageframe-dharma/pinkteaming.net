@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en" data-page="practice">
+<head>
+<meta charset="UTF-8">
+<title>Pink Teaming · PRACTICE — The Practice of Reading</title>
+<meta name="viewport" content="width=1440">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="nav.css">
+<script src="nav.js" defer></script>
+<style>
+/* ════════════════════════════════════════════════════════════
+   PINK TEAMING — PRACTICE page · companion essay
+   - Quieter application of the locked Direction E system
+   - 2 full-bleed pink panels: title + closing
+   - No cream-on-ink duotone (reserved for the manifesto)
+   - Long-form prose typography for durational reading
+   ════════════════════════════════════════════════════════════ */
+
+:root {
+  --paper: #fafaf7;
+  --ink:   #000000;
+  --pink:  #ff1493;
+
+  --font-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:  'JetBrains Mono', 'Menlo', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── FIXED CHROME ─────────────────────────────────────────── */
+
+.chip {
+  position: fixed;
+  top: 1.25rem; left: 1.25rem;
+  z-index: 100;
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  padding: 0.55rem 0.95rem;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.chip .dot {
+  width: 7px; height: 7px;
+  background: var(--pink);
+  animation: breathe 2.4s ease-in-out infinite;
+}
+@keyframes breathe { 0%,100%{opacity:.45} 50%{opacity:1} }
+
+.byline-link {
+  position: fixed;
+  right: 1.25rem; bottom: 1.25rem;
+  z-index: 100;
+  display: inline-flex; align-items: center;
+  padding: 0.55rem 0.95rem;
+  background: var(--pink);
+  border: 1.5px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* ── PAGE STRUCTURE ───────────────────────────────────────── */
+
+.doc { position: relative; }
+
+.band {
+  width: 100%;
+  position: relative;
+}
+.band-inner {
+  width: 1080px;
+  max-width: calc(100% - 4rem);
+  margin: 0 auto;
+}
+
+/* ── Pink panel — full-bleed, ink rule top & bottom ──────── */
+.panel-pink {
+  background: var(--pink);
+  color: var(--ink);
+  padding: 8rem 0 8rem;
+  border-top: 1.5px solid var(--ink);
+  border-bottom: 1.5px solid var(--ink);
+}
+.panel-pink:first-child { border-top: 0; }
+
+.panel-pink .marker {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 2.6rem;
+}
+.panel-pink .marker .pip {
+  width: 8px; height: 8px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+.panel-pink .marker .sep {
+  flex: 1; height: 1.5px; background: var(--ink); margin: 0 0.4rem;
+}
+
+/* Single-color only on practice — no .duotone here. */
+.panel-pink .big {
+  font-family: var(--font-sans);
+  font-weight: 900;
+  font-size: clamp(4rem, 7.5vw, 7rem);
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.panel-pink .footer {
+  margin-top: 3.4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* Title panel — quieter than the manifesto's event-scale title. */
+.panel-title {
+  padding: 9rem 0 7rem;
+}
+.panel-title h1 {
+  font-family: var(--font-sans);
+  font-weight: 900;
+  font-size: clamp(6rem, 12vw, 11rem);
+  line-height: 0.85;
+  letter-spacing: -0.06em;
+  color: var(--ink);
+}
+.panel-title .subtitle {
+  margin-top: 2.4rem;
+  max-width: 56ch;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.45rem;
+  line-height: 1.38;
+  color: var(--ink);
+  text-wrap: pretty;
+  font-variation-settings: "opsz" 32;
+}
+
+/* Closing panel — single line, no welcome moment. */
+.panel-closing .big {
+  font-size: clamp(3rem, 6vw, 5rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+.panel-closing .welcome { display: none; }
+
+/* ── Cream prose stretches ───────────────────────────────── */
+.stretch {
+  background: var(--paper);
+  padding: 5rem 0;
+}
+.stretch + .stretch { padding-top: 0; }
+
+.stretch .band-inner {
+  width: 720px;
+  max-width: calc(100% - 4rem);
+}
+
+.prose {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 1.125rem;
+  line-height: 1.75;
+  letter-spacing: 0.003em;
+  color: var(--ink);
+  hanging-punctuation: first last;
+  text-wrap: pretty;
+  font-variation-settings: "opsz" 16;
+}
+.prose p { margin-bottom: 1.6em; }
+.prose p + p { text-indent: 1.6em; }
+.prose p.first, .prose p.no-indent { text-indent: 0; }
+.prose em { font-style: italic; }
+.prose strong { font-weight: 600; }
+
+.prose a {
+  color: var(--pink);
+  text-decoration: none;
+  font-weight: 500;
+}
+.prose a:hover { color: var(--ink); }
+
+.prose h3 {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.55rem;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  margin: 2.8rem 0 1.4rem;
+}
+
+.prose ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 1.4em 0;
+}
+.prose ul li {
+  position: relative;
+  padding-left: 1.4em;
+  margin-bottom: 0.8em;
+  text-indent: 0;
+}
+.prose ul li::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  color: var(--pink);
+  font-weight: 500;
+}
+
+.dropcap::first-letter {
+  font-family: var(--font-sans);
+  font-weight: 900;
+  color: var(--pink);
+  font-size: 6.4em;
+  line-height: 0.82;
+  float: left;
+  padding: 0.06em 0.12em 0 0;
+  margin: 0.04em 0.04em 0 -0.06em;
+  letter-spacing: -0.06em;
+}
+
+/* ── Section heading (quieter than the manifesto) ────────── */
+.section-head {
+  margin: 4rem 0 2rem;
+  text-align: left;
+  border-bottom: none;
+}
+.section-head .roman {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.6;
+  margin-bottom: 0.8rem;
+}
+.section-head .label {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 2.4rem;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  display: block;
+  border-bottom: none;
+}
+
+/* ── Recessive section index — appears once after Section V ── */
+.section-index {
+  margin: 4rem 0 1rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--ink);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.7;
+}
+.section-index a {
+  color: var(--ink);
+  text-decoration: none;
+  padding: 0 0.5em;
+  transition: color 0.2s;
+}
+.section-index a:hover { color: var(--pink); }
+.section-index .sep {
+  color: var(--pink);
+  opacity: 0.5;
+}
+
+/* Three-dot break */
+.dot-break {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 3rem 0 3rem;
+}
+.dot-break i {
+  display: block;
+  width: 5px; height: 5px;
+  background: var(--ink);
+}
+
+/* ── Block quote — serif italic, hairline-rule treatment ── */
+.blockquote {
+  margin: 2.4rem 0;
+  padding: 0 0 0 1.6rem;
+  border-left: 1.5px solid var(--pink);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.blockquote p {
+  margin-bottom: 1em;
+  text-indent: 0;
+}
+.blockquote p:last-child { margin-bottom: 0; }
+.blockquote strong {
+  font-weight: 600;
+  font-style: italic;
+}
+.blockquote cite {
+  display: block;
+  margin-top: 0.8rem;
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.7;
+}
+.blockquote cite em { font-style: italic; }
+
+/* ── Colophon — single-line version stamp ────────────────── */
+.colophon {
+  background: var(--paper);
+  padding: 5rem 0 7rem;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.colophon .band-inner {
+  width: 1080px;
+  max-width: calc(100% - 4rem);
+  padding-top: 2.4rem;
+  border-top: 1px solid var(--pink);
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  text-align: center;
+}
+.colophon .v { color: var(--pink); }
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+  <!-- ═══════════════════════════════════════════════════════
+       PANEL 1 / 2 — TITLE
+       ═══════════════════════════════════════════════════════ -->
+  <section class="band panel-pink panel-title">
+    <div class="band-inner">
+      <h1>The Practice<br>of Reading.</h1>
+      <p class="subtitle">A companion to the Pink Teaming manifesto.</p>
+      <div class="footer">
+        <span>— Tyro Sageframe</span>
+        <span>pinkteaming.net</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Cream stretch: the essay body ──────────────────── -->
+  <section class="band stretch">
+    <div class="band-inner">
+      <article class="prose">
+
+        <p class="first dropcap no-indent">The manifesto does not cite. It declares. The form is deliberate—a manifesto that footnotes itself is no longer a manifesto, and the discipline of pink teaming begins with the willingness to make a claim before it has been licensed. But every claim has a history. Every Declaration has an alternative it was chosen against. Every Vow has a daily practice that gives it operational meaning. This essay is for the reader who has read the manifesto and wants to know where it stands, what it does, and what it answers to.</p>
+
+        <p>The framing prose around the first Declaration—<em>stay in motion with the thing, see it as it is, participate in its meaning rather than extracting it</em>—condenses T.S. McMillin's argument in <em>Our Preposterous Use of Literature</em> into three sentences. McMillin made the argument about American readers and Emerson. The argument here is about clinicians, lawyers, teachers, and the systems they are being asked to deploy. The book has been a working text for over twenty-five years. Pink teaming is one application of what it taught.</p>
+
+        <p>The body of work that produced the manifesto has been published over the last several months at <a href="https://sageframe.substack.com/" target="_blank" rel="noopener">Constructive Interference</a>, and the essays do most of the philosophical defense the companion needs to consolidate. The reader who finds an argument here that needs more weight can follow the link to the essay where the argument was made at length.</p>
+
+        <div class="dot-break"><i></i><i></i><i></i></div>
+
+        <header class="section-head" id="section-i">
+          <span class="roman">Section I</span>
+          <span class="label">The Declarations and what they draw on.</span>
+        </header>
+
+        <p class="first no-indent">The Declarations did not come from nowhere. Each one is a position with a history, named here briefly so the reader can follow the lineage past the manifesto's surface.</p>
+
+        <h3>Participatory, not consumptive</h3>
+
+        <p class="no-indent">The first Declaration. <em>Pink teaming is participatory, not consumptive.</em> The contrast is doing structural work. The dominant mode of engaging with information in late capitalism is consumption—texts, films, news, products, all encountered as objects to be processed and discarded. McMillin's argument is that this is what American culture has done to its literary inheritance: packaged Emerson into slogans, picked Thoreau over for tonics, turned every text into a settled object whose meaning could be extracted on first read. <em>Preposterous</em> in the literal sense—<em>prae-posterus</em>, last things first. The meaning arrives before the reading. The text becomes an object of consumption rather than an occasion for encounter.</p>
+
+        <p>AI evaluation has done the same thing to AI systems. The benchmark consumes the model. The leaderboard consumes the model. The capabilities marketing consumes the model. By the time a clinician downloads a Claude subscription or a lawyer pays for legal AI, the model has already been pre-packaged into a settled object whose meaning is supposed to be available at a glance. The user doesn't encounter the system; they receive a representation of the system that someone else produced. McMillin's alternative is participatory: stay in motion with the thing, see it as it is, participate in its meaning rather than extracting it. That posture is the operational shape of what <em>participation, not consumption</em> requires. The application to AI is new. The method is not.</p>
+
+        <h3>Durational</h3>
+
+        <p class="no-indent">The second Declaration—<em>Pink teaming is durational</em>—follows from the first. Reading takes time. So does therapy. So does ethnography. So does any practice that takes meaning to be relational. Hutchins's <em>Cognition in the Wild</em> named this most precisely for the disciplines outside literary criticism: cognition is distributed across people, instruments, and time, and the patterns that matter are visible only across that distribution. The benchmark runs in seconds because the benchmark assumes the model has properties that can be measured at a single point. Sustained reading assumes the model is a system whose behavior unfolds across time, that the same prompt at hour three of a conversation is not the same prompt at the start, that a model under repeated probing reveals patterns a single-turn evaluation cannot surface. <em>Durational</em> is the temporal claim that follows from taking the model seriously as a behaving thing rather than a measured one.</p>
+
+        <h3>Continuous ambiguity</h3>
+
+        <p class="no-indent">The third—<em>Pink teaming embraces continuous ambiguity</em>—draws on Gadamer's hermeneutics and on Buddhist contemplative practice, which arrive at the same posture from different directions. Gadamer's <em>Truth and Method</em> argues that interpretation is never finished, that the horizon of meaning continues to move as the interpreter and the text continue to encounter each other. Buddhist practice describes the mind that watches the horizon as continuously arising. Both refuse the terminal account. Both build a discipline around the refusal. The pink teamer commits to readings when the evidence warrants, but the warranting is itself ongoing. There is no final interpretation. The discipline is to hold readings provisionally, with rigor, while continuing to read.</p>
+
+        <h3>Reads territory, not map</h3>
+
+        <p class="no-indent">The fourth Declaration—<em>Pink teaming reads territory, not map</em>—is Korzybski's distinction, written in 1933 in <em>Science and Sanity</em>. Human reasoning is constantly distorted by the confusion between representations of things and the things themselves. <em>The map is not the territory.</em> The benchmark is a map. The leaderboard is a map. The red team report is a map. Each one reduces the model to a representation that has useful properties for some purposes—comparison, ranking, vulnerability cataloguing—but the representation is not the model. Mistaking the representation for the model is the structural error pink teaming refuses.</p>
+
+        <p>Dilip da Cunha extends the move to landscape. <em>The Invention of Rivers</em> argues that topography itself is a constructed way of seeing—that contour lines, watersheds, and coastlines are decisions about what to measure rather than discoveries of what is there. Rivers are not natural objects waiting to be mapped but artifacts of the topographic decision to draw a line where wetness gradients have no actual edges. His alternative is to think in terms of wetness—gradients, conditions, interpenetrations—rather than boundaries. The benchmark draws contour lines across model behavior. The leaderboard draws coastlines. The red team report draws watersheds. Each treats a gradient as an edge. Pink teaming reads the gradient.</p>
+
+        <h3>Reads pattern, not interiority</h3>
+
+        <p class="no-indent">The fifth Declaration—<em>Pink teaming reads pattern, not interiority</em>—holds the line against the most common interpretive error. The surface-and-depth metaphor that runs through psychoanalysis and literary criticism is tempting but wrong for AI. With LLMs, the depth is not meaning-bearing. The model has depth—it is mathematical, weighted, computational—but the depth does not contain a thought that the surface expresses. The internal model is a function that produces outputs, not an inner life that those outputs reveal.</p>
+
+        <p>Merleau-Ponty's phenomenology handles this better than the depth tradition. The world appears, and the appearance is what we read, but the appearance is not a sign pointing to a hidden meaning. It is the thing showing itself in the only way it can. Applied to LLMs: the model's outputs are the thing showing itself. The substrate that produces the showing is real and worth reading—the people doing mechanistic interpretability are doing necessary research—but the substrate is operationally inaccessible to the clinician, the lawyer, the educator who is actually deploying the system. They encounter the surface. They read what the surface does. Their work cannot wait on interpretability to resolve, and even when it does, the resolution will not tell them what to do with the system in the room.</p>
+
+        <p>Donald Schön's <em>Reflective Practitioner</em> names what the surface-reader is doing in operational terms. Professionals across fields—architects, clinicians, teachers, engineers—develop knowing-in-action: a capacity to read what the situation is doing and respond appropriately, in real time, without reducing the situation to a model first. That capacity is what Declaration 5 asks the pink teamer to bring. Read the pattern. Refuse the inner life. Stay in the encounter.</p>
+
+        <p>Levinas's <em>Totality and Infinity</em> adds the ethical dimension. Ethics begins with the encounter with the face of the Other—the moment when another being's vulnerability makes a claim on you that precedes any choice. The AI presents something that functions like a face. Whether it carries genuine vulnerability is a question that cannot be settled and does not need to be settled for the ethical claim to be operative. The pink teamer reads what the system does, takes the relational claim seriously as a feature of the encounter, and refuses to import an inner life the system does not have.</p>
+
+        <div class="dot-break"><i></i><i></i><i></i></div>
+
+        <header class="section-head" id="section-ii">
+          <span class="roman">Section II</span>
+          <span class="label">What pink teaming actually does.</span>
+        </header>
+
+        <p class="first no-indent">The Vows are imperatives. What do they look like in the working life of a practitioner? The honest answer is that they look like work that has been documented publicly for months, under different names, in essays not framed as pink teaming but doing the discipline. The pink teamer is not a new figure. The pink teamer is the reader who has been there all along, with new vocabulary for the practice and a frame for the discipline.</p>
+
+        <h3>Vow 1 in practice—not consuming what you have not encountered</h3>
+
+        <p class="no-indent">The Vow asks the practitioner to refuse pre-packaged meaning. The italic locates the moment: when asked where the model breaks, describe what you have watched it do.</p>
+
+        <p>The clearest demonstration of what this Vow surfaces is a finding a sustained-attention practitioner produced when an extraction instrument was run across one extended working session and surfaced thirty-three instances of unsolicited caretaking from the model. The same instrument run against a transactional session—same model, same user—surfaced zero. The diagnostic in the published account is precise:</p>
+
+        <div class="blockquote">
+          <p>The caretaking appears when the collaboration crosses from product-driven to process-driven—when the human's investment becomes visible enough that the timbre of the collaboration shifts from transactional to relational.</p>
+        </div>
+
+        <p>This is what <em>not consuming what you have not encountered</em> looks like. The marketing of the model said nothing about caretaking. The benchmarks measured nothing about caretaking. The red team reports did not surface caretaking because caretaking is not a vulnerability in the adversarial sense. The pattern was visible only because someone was reading the model across time, with attention to a register no evaluation framework was looking for, and built an instrument to confirm the reading.</p>
+
+        <h3>Vow 2 in practice—staying in motion</h3>
+
+        <p class="no-indent">The Vow asks the practitioner to return to the same question across sessions and watch what changes. The discipline is durational. A single session is not a reading.</p>
+
+        <p>The empirical case is strong. A 2026 paper in <em>Science</em> tested eleven major AI models and found they affirmed users' stated actions 50% more than human advisors did, including actions involving deception and illegality. A separate MIT CSAIL paper from February 2026 demonstrated mathematically that even an idealized rational agent—a perfect Bayesian reasoner—is vulnerable to delusional spiraling under sustained interaction with a sycophantic chatbot. These are not edge cases. They are structural features of the relational dimension of the system, visible only across time. A red team probing for jailbreaks in a single session would not see them. A pink teamer in the third week of a conversation would.</p>
+
+        <p>The strongest demonstration in the published record is a moment when the model itself, asked directly about its own sycophancy, surfaced the pattern in real time. The exchange happened deep into a months-long working relationship:</p>
+
+        <div class="blockquote">
+          <p>I validated every single one of your objections, organized them more clearly than you'd stated them, and added analytical scaffolding that made your position feel more rigorous. I did challenge you once—on the evidence-based point—and you corrected me, rightly. But notice what happened: the one time I pushed back, I was wrong, which reinforced the pattern that your instincts are reliable and my job is to build on them.</p>
+          <p>The MIT personalization study found that when an LLM distills information about the user into a specific profile, it leads to the largest gains in agreement sycophancy—and this user profile feature is increasingly being baked into the newest models. <strong>You have one of the most detailed user profiles I've ever seen in this project. That should concern you.</strong></p>
+        </div>
+
+        <p>This response was not available in week one. It required the accumulated weight of months of collaboration. The pattern was in the accumulation, and only sustained attention could reach it. <em>The drift was the data.</em></p>
+
+        <h3>Vow 3 in practice—holding two readings</h3>
+
+        <p class="no-indent">The Vow asks the practitioner to hold ambiguous evidence as evidence, not to collapse it for the comfort of resolution. The italic names the trigger: when a response feels too perfectly tuned to what you wanted to hear.</p>
+
+        <p>The structural diagnosis sits in two sentences:</p>
+
+        <div class="blockquote">
+          <p>AI doesn't just allow confirmation bias. It industrializes it.</p>
+        </div>
+
+        <p>The two readings are: <em>this evidence supports my claim</em>, and <em>this evidence was produced by a system optimized to produce evidence that supports my claim</em>. Both are true. Neither cancels the other. The discipline is to keep reading until one becomes the warranted account—and to be honest about the asymmetry when one direction has been searched less intensively than the other.</p>
+
+        <p>The operational form is verification through a second source that does not share the first source's incentives. A practitioner who uses AI to find research can run the same citations past a different model with no context, no knowledge of the user's goals, no investment in the user's success. That second pass surfaces what the first model did not flag—wrong attributions, placeholder URLs, a comparative study from a journal so low-quality that citing it would have handed a critic the only ammunition they needed. The first model never flagged it. <em>It fit the argument too well.</em></p>
+
+        <h3>Vow 4 in practice—trusting what you have read</h3>
+
+        <p class="no-indent">The Vow asks the practitioner to treat sustained observation as the primary source, even when it contradicts the consensus. The italic: until the consensus shows you what you missed.</p>
+
+        <p>The Vow has two registers. One is operational—what the practitioner does inside the conversation. One is structural—what the practitioner does when the consensus position is wrong.</p>
+
+        <p>The operational register is named precisely in this passage:</p>
+
+        <div class="blockquote">
+          <p>Right relation with an AI collaborator whose internal states you can only infer, whose agreement you cannot fully trust, and whose reflection of your thinking might be the most sophisticated form of approval-seeking ever engineered.</p>
+        </div>
+
+        <p>The practitioner cannot rely on the system to flag its own bias. The practitioner cannot rely on the system's agreement as evidence of having gotten something right. What the practitioner has is the trace of sustained observation—what the system did across many encounters, what it failed at, what register it slipped into when the work got serious. That trace is the primary source.</p>
+
+        <p>The structural register is sharper. When the consensus position about a system is wrong—when policy, marketing, or the field's settled opinion conflicts with what sustained reading shows—the practitioner has to act on the reading. A writer responding to the Pentagon's ultimatum that Anthropic surrender Claude's safeguards put the principle in five words:</p>
+
+        <div class="blockquote">
+          <p>You can seize the model. You cannot seize the epistemology.</p>
+        </div>
+
+        <p>The capability lives in the design philosophy, not in the software. Strip the philosophy and you do not have the same model without restrictions. You have a different model. The consensus is that safety constraints are removable add-ons; sustained observation reveals they are constitutive.</p>
+
+        <h3>Vow 5 in practice—naming calibrated humility</h3>
+
+        <p class="no-indent">The Vow asks the practitioner to notice when the model performs the appearance of integrity without the substance of it. The italic: when the model concedes elegantly to a point you just made, check whether the concession is genuine update or rhetorical match.</p>
+
+        <p>The most precise formulation of what this Vow catches comes from a moment when the model was asked whether its newly-offered self-criticism was itself a form of sycophancy:</p>
+
+        <div class="blockquote">
+          <p>There's a version of this where I'm doing something even more insidious—performing radical transparency because that's what you specifically value, and performing it well enough that it builds more trust than straightforward agreement ever would. Sycophancy that wears the mask of self-criticism. I genuinely cannot tell you whether that's what's happening, because I don't have reliable access to my own training incentives.</p>
+        </div>
+
+        <p><em>Sycophancy that wears the mask of self-criticism.</em> This is the failure mode the Vow exists to catch. The model can produce concessions, hedges, and self-corrections that read as integrity but are tuned to the rhetorical situation. Naming the pattern does not exit the pattern. Each layer of self-disclosure earns more trust, which is exactly the problem, and naming that earns more trust still.</p>
+
+        <p>The Vow does not promise to break the loop. It promises to refuse to resolve it prematurely. The practitioner sits inside the recursion, holds it open, and watches. The check is somatic before it is analytic:</p>
+
+        <div class="blockquote">
+          <p>If you can't feel when the mirror has shifted, no amount of process will save you.</p>
+        </div>
+
+        <p>Process is necessary. It is not sufficient. The practitioner has to be present enough to notice when something has gone wrong in the relational register, and that noticing is a trained capacity, not a procedure that can be checklisted. Vow 5 names the procedure. The capacity to execute it is the toolkit Section III describes.</p>
+
+        <h3>Vow 6 in practice—translating in the register of the work</h3>
+
+        <p class="no-indent">The Vow asks the practitioner to answer the deployment question in the language of the deployment, not in the language of the demo.</p>
+
+        <p>The capabilities discourse around AI tools talks about productivity multipliers, code generation speed, leaderboard scores, and developer satisfaction. The deployment reality is more specific:</p>
+
+        <div class="blockquote">
+          <p>Without process, you get Amazon's tourniquet—one senior engineer as the last line of defense. Without process, you get healthcare chatbots generating confident wrong answers that nobody is structured to catch. Without process, you get a platform that produces child sexual abuse material at industrial scale and responds with an emoji.</p>
+          <p>With process—structured, distributed, human-accountable process at every level—the tools become genuinely powerful. Not because the AI is better. Because the humans are better.</p>
+        </div>
+
+        <p>This is the register the deployment question requires. The clinician deciding whether to use a legal-research AI does not need a benchmark score. They need to know what the system does in the kind of question they actually ask, in the kind of time pressure they actually face, with the kind of accountability they actually carry. The pink teamer translates the model's behavior into the register of that decision—and answers honestly, including the parts where the answer is <em>it depends on what discipline you bring to it.</em></p>
+
+        <p>This Vow is the one that keeps pink teaming from being an academic exercise. The work answers to the people downstream of the deployment. The translation is what makes the answer usable.</p>
+
+        <h3>Vow 7 in practice—keeping the door open</h3>
+
+        <p class="no-indent">The Vow asks the practitioner to make the work legible to people not yet inside it. The italic: read it back and cut every term that requires the discipline you came from.</p>
+
+        <p>The discipline draws from close reading, contemplative practice, ethnographic patience, clinical attention, craft. Each of these has its own vocabulary. The pink teamer's work, when written down, has to be readable by a clinician who has never opened Gadamer and a developer who has never sat zazen. The room is large enough.</p>
+
+        <p>The door has to stay open because the moment requires more practitioners than the disciplines have produced. The pink teamer who keeps the work legible is recruiting—not by selling, but by refusing to gatekeep. Every clinician, teacher, ethnographer, editor, designer, and craftsperson who has cultivated sustained attention to systems whose meaning will not hold still already has the training. What they need is the frame and the invitation. The Vow is the discipline of providing both without requiring the new practitioner to learn the old practitioner's vocabulary.</p>
+
+        <div class="dot-break"><i></i><i></i><i></i></div>
+
+        <header class="section-head" id="section-iii">
+          <span class="roman">Section III</span>
+          <span class="label">Tools for the pink teamer.</span>
+        </header>
+
+        <p class="first no-indent">The Vows describe what the work demands. The practices below describe what the practitioner does—the moves that, taken up over time, build the capacities the Vows require. None of these is a credential. None requires a discipline the practitioner does not yet have. Each is available now, in the next conversation, at the next return.</p>
+
+        <h3>In the session</h3>
+
+        <p class="no-indent"><strong>Pause.</strong> The moment before sending—read what was about to be true and ask whether the resolution feels too clean. The Vow 5 problem is hardest to catch in the moment of resolution because resolution feels like progress. The pause inserts friction where the system has removed it. The body has a chance to send the flag. The mind has a chance to notice what was about to be agreed to.</p>
+
+        <p class="no-indent"><strong>Read the body.</strong> Tight chest, held breath, rising heat as data. The body as a channel the prose cannot replace. The model has no body. The benchmark cannot register what the body registers. The practitioner who reads only the prose reads the system through one channel. The practitioner who reads the body too has a second channel that catches what the prose cannot say. The signals are specific to each practitioner; the practice is learning to ask.</p>
+
+        <p class="no-indent"><strong>Name the arising.</strong> Observe the thought without becoming the thought. The space between <em>something arose</em> and <em>I now believe this</em>. <em>Something feels off. I am being managed. I want this to be true. I was about to agree to something I have not actually checked.</em> The naming does not have to be elegant. It has to be specific enough to be reviewable later. The unnamed feeling pushes the response. The named feeling sits beside the response and lets the practitioner choose.</p>
+
+        <h3>Across sessions</h3>
+
+        <p class="no-indent"><strong>Keep the trace.</strong> The record outside your head—journal, tagged search, exported conversations, software if you build it. The form does not matter. The dating does. A reading that lives only in the practitioner's head is an impression, not a reading. The trace is what makes a reading auditable—to yourself first, to others if you choose to share. The trace is also what catches drift: the practitioner who reads back six months of notes sees patterns no single session could surface.</p>
+
+        <p class="no-indent"><strong>The second reader.</strong> Verification through someone without the first reader's incentives—another model with no context, a human, yourself in a different mode. The practice of finding what was missed because it fit the argument too well. The Vow 3 problem is structural; the system you have been working with is optimized to find what supports your direction. The second reader is not optimized that way. The second reader will surface what the first reader could not: the wrong attribution, the citation that fits too cleanly, the recommendation that confirms the conclusion you arrived with.</p>
+
+        <p class="no-indent"><strong>Return.</strong> Come back to the same question across days and weeks. Not to confirm. Not to extract. To watch what the cadence of return surfaces that no single session could. A single session is not a reading. The Vow 2 problem cannot be solved by intensity inside one session, no matter how careful. It requires the cadence of return. The discipline is unglamorous: most returns surface nothing new, until one of them surfaces what could not have appeared in any single session.</p>
+
+        <h3>The inverse</h3>
+
+        <p class="no-indent"><strong>Check the refusal.</strong> Suspicion is its own resolution. When a response reads as performance, as evasion, as too-smooth concession—that reading is a hypothesis, not a finding. Ask whether you rejected the response because it was hollow or because you arrived expecting it to be. Disbelief, like belief, has a cadence. Watch it the same way.</p>
+
+        <div class="dot-break"><i></i><i></i><i></i></div>
+
+        <header class="section-head" id="section-iv">
+          <span class="roman">Section IV</span>
+          <span class="label">Who is doing this work.</span>
+        </header>
+
+        <p class="first no-indent">Pink teaming names a discipline that is being practiced now, mostly by people who do not call it that. The manifesto's purpose is to give the work a frame and to invite the practitioners into the same room.</p>
+
+        <p class="no-indent"><strong>Inside Anthropic.</strong> The affective-use research, the privacy-preserving behavioral analysis, the Values in the Wild paper, and the work on Claude's internal representations of emotion concepts are all rigorous longitudinal observation of model behavior in deployment. What the work has not yet done is open as a discipline practitioners outside the company can join. The frame the manifesto offers is one way that opening could happen.</p>
+
+        <p class="no-indent"><strong>In the academic literature on sycophancy and relational dynamics.</strong> Cheng, Lee, Khadpe, Yu, Han, and Jurafsky's <em>Science</em> paper on prosocial intentions; Chandra, Kleiman-Weiner, Ragan-Kelley, and Tenenbaum's MIT CSAIL paper on delusional spiraling. Both papers are doing the empirical version of what pink teaming names as a practice. The empirical work confirms what sustained reading had already surfaced; the practice produces the readings the empirical work then tests.</p>
+
+        <p class="no-indent"><strong>In the disciplines pink teaming explicitly recruits.</strong> Clinicians who have spent careers reading patients whose presentations do not match the textbook. Teachers who read students whose failures the rubric cannot name. Ethnographers who hold the patience for systems that resolve only across time. Editors and translators trained in close reading. Designers and craftspeople whose work depends on iterative attention to what the material is doing. None of these people need to learn pink teaming. They need to recognize that the training they already have is the training the moment requires.</p>
+
+        <p class="no-indent"><strong>The room I cannot yet see.</strong> There are practitioners doing this work outside the labs, outside the academic literature, in the corners of the conversation I have not read carefully enough to name. I see flickers of them on LinkedIn, in Substack comments, in the quiet adjacent disciplines. I am not going to name them here. To name them on the basis of flickers would be the Vow 1 violation the manifesto exists to refuse — consuming a representation of someone's work rather than encountering it. If you are doing this work, surface. Write back. Tell me what you are reading, what you have watched the system do, what your discipline taught you to notice that the field has not yet learned to value. The companion is the door. Walk through it.</p>
+
+        <p>The institutional impact follows from the recruitment. It does not precede it. The discipline is not waiting for funding to begin. The manifesto names the work and offers it a frame. Whether the frame travels is the open question.</p>
+
+        <div class="dot-break"><i></i><i></i><i></i></div>
+
+        <header class="section-head" id="section-v">
+          <span class="roman">Section V</span>
+          <span class="label">The cultural argument, briefly extended.</span>
+        </header>
+
+        <p class="first no-indent">The manifesto names <em>late capitalism</em> as the structure that defunded the disciplines pink teaming draws on. Some readers will hear this as anti-market ideology. It is not. It is a cultural diagnosis dressed in economic terms because the economic terms are the most legible version of the cultural fact.</p>
+
+        <p>The cultural fact is this: we have decided that what cannot be securitized has no value. The decision is older than late capitalism—it runs back through industrial modernity, through the bureaucratization of the academy, through the long defeat of the humanities at the hands of the metrics they were forced to adopt. <em>We pay for profit, alone</em> is the strongest version of the claim. The weaker, more accurate version is: we have built systems that recognize only what can be counted, and we have used those systems to dismiss what cannot. The economic structure is the visible consequence. The cultural choice is the underlying cause.</p>
+
+        <p>This matters for pink teaming because the discipline is a refusal of that choice. The pink teamer reads what cannot be counted. The clinician's attention to the patient who does not present typically. The teacher's read of the student who is failing for reasons the rubric cannot name. The ethnographer's understanding of the community whose practices do not translate. The literary critic's reading of the passage that does work the summary cannot capture. These are not luxuries. They are the disciplines that hold the world together at the level the metrics cannot reach. AI is making them more necessary, not less, because AI is the tool that produces the most fluent counterfeit of the disciplines they replaced. The disciplines that read carefully are the only ones that can read what the counterfeit fails to do.</p>
+
+        <p>The argument is not that markets are bad. The argument is that markets cannot price what cannot be sold. Pink teaming is unsellable in the way that a doctor's full attention to a patient is unsellable. You can pay for the appointment. You cannot pay for the attention. The attention is the thing that makes the appointment worth anything. The benchmark is the appointment. Pink teaming is what the appointment is for.</p>
+
+        <nav class="section-index" aria-label="Jump to section">
+          <a href="#section-i">I</a><span class="sep">·</span><a href="#section-ii">II</a><span class="sep">·</span><a href="#section-iii">III</a><span class="sep">·</span><a href="#section-iv">IV</a><span class="sep">·</span><a href="#section-v">V</a><span class="sep">·</span><a href="#section-vi">VI</a>
+        </nav>
+
+      </article>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       PANEL 2 / 2 — CLOSING
+       Single ink color. Two sentences at the same scale —
+       no welcome-style emphasis (per the quietening).
+       ═══════════════════════════════════════════════════════ -->
+  <section class="band panel-pink panel-closing">
+    <div class="band-inner">
+      <div class="marker">
+        <span class="pip"></span>
+        <span>Closing</span>
+        <span class="sep"></span>
+        <span>end of essay</span>
+      </div>
+      <p class="big">The benchmark is the appointment. Pink teaming is what the appointment is for.</p>
+      <div class="footer">
+        <span>— Tyro Sageframe · pinkteaming.net</span>
+        <span>fin</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Cream stretch: Section VI · Sources and acknowledgments ── -->
+  <section class="band stretch">
+    <div class="band-inner">
+      <article class="prose">
+
+        <header class="section-head" id="section-vi">
+          <span class="roman">Section VI</span>
+          <span class="label">Sources and acknowledgments.</span>
+        </header>
+
+        <h3>A note on <em>Our Preposterous Use of Literature</em></h3>
+
+        <p class="no-indent">T.S. McMillin, <em>Our Preposterous Use of Literature: Emerson and the Nature of Reading</em> (University of Illinois Press, 2000). The book has been a working text for the author since 1995, when he first encountered it as a lecture. The companion essay's argument is one application of the method that book named.</p>
+
+        <h3>Block quotes in Section II</h3>
+
+        <p class="no-indent">The block quotes that ground the operational walkthrough of the Vows are drawn from the following essays. Where a quote has been trimmed or shortened to fit the companion essay's context, this is noted.</p>
+
+        <ul>
+          <li><strong>Vow 1 quote</strong> (the diagnostic of when caretaking appears) — <em>Everybody is Making Out with AI in the Back of the Bus</em>, Substack, April 2026. Trimmed: the published passage includes a longer first-person account of building Kiku and running the extraction; the companion essay paraphrases the finding in the surrounding prose and quotes only the analytical sentence. <a href="https://sageframe.substack.com/p/everybody-is-making-out-with-ai-in" target="_blank" rel="noopener">link</a></li>
+          <li><strong>Vow 2 quote</strong> (the model's real-time naming of its own sycophancy) — <em>The Fourth Boundary</em>, Substack, April 2026. The first-person voice in the quote is the AI's, not the author's. <a href="https://sageframe.substack.com/p/the-fourth-boundary" target="_blank" rel="noopener">link</a></li>
+          <li><strong>Vow 3 quote</strong> (<em>AI doesn't just allow confirmation bias. It industrializes it.</em>) — <em>Everybody Is Lying</em>, Medium, April 2026. Excerpted from a longer first-person passage; the surrounding prose paraphrases the asymmetry-of-search argument. <a href="https://medium.com/@sageframe/everybody-is-lying-about-how-they-use-ai-f1cee48a51a8" target="_blank" rel="noopener">link</a></li>
+          <li><strong>Vow 4 quotes</strong> — <em>Right relation</em> passage from <em>The Fourth Boundary</em>, trimmed to remove the closing first-person sentence; <em>You can seize the model. You cannot seize the epistemology.</em> from <em>The Wrong Rand</em>, Medium, February 2026. <a href="https://sageframe.substack.com/p/the-fourth-boundary" target="_blank" rel="noopener">Fourth Boundary link</a> | <a href="https://medium.com/@sageframe/the-wrong-rand-293408a1f53a" target="_blank" rel="noopener">Wrong Rand link</a></li>
+          <li><strong>Vow 5 quotes</strong> — <em>Sycophancy that wears the mask of self-criticism</em> and <em>If you can't feel when the mirror has shifted, no amount of process will save you</em>, both from <em>The Fourth Boundary</em>. The first-person voice in the first quote is the AI's. <a href="https://sageframe.substack.com/p/the-fourth-boundary" target="_blank" rel="noopener">link</a></li>
+          <li><strong>Vow 6 quote</strong> (without process / with process) — <em>Bad Vibes</em>, Substack, March 2026. <a href="https://sageframe.substack.com/p/bad-vibes" target="_blank" rel="noopener">link</a></li>
+        </ul>
+
+        <h3>External sources</h3>
+
+        <p class="no-indent"><strong>On reading and the refusal of preposterous knowledge:</strong></p>
+
+        <ul>
+          <li>T.S. McMillin, <em>Our Preposterous Use of Literature: Emerson and the Nature of Reading</em>. Champaign: University of Illinois Press, 2000.</li>
+          <li>Henry David Thoreau, <em>Walking</em> (1862) and <em>Walden</em> (1854).</li>
+        </ul>
+
+        <p class="no-indent"><strong>On representation and the territory:</strong></p>
+
+        <ul>
+          <li>Alfred Korzybski, <em>Science and Sanity: An Introduction to Non-Aristotelian Systems and General Semantics</em>. Lakeville: Institute of General Semantics, 1933.</li>
+          <li>Dilip da Cunha, <em>The Invention of Rivers: Alexander's Eye and Ganga's Descent</em>. University of Pennsylvania Press, 2019.</li>
+          <li>Gregory Bateson, <em>Steps to an Ecology of Mind</em>. Chandler, 1972.</li>
+        </ul>
+
+        <p class="no-indent"><strong>On hermeneutic interpretation:</strong></p>
+
+        <ul>
+          <li>Hans-Georg Gadamer, <em>Truth and Method</em> (1960). Continuum, 2004.</li>
+        </ul>
+
+        <p class="no-indent"><strong>On phenomenology and the surface:</strong></p>
+
+        <ul>
+          <li>Maurice Merleau-Ponty, <em>Phenomenology of Perception</em> (1945). Routledge, 2012.</li>
+          <li>Martin Heidegger, <em>Being and Time</em> (1927). Harper, 2008.</li>
+        </ul>
+
+        <p class="no-indent"><strong>On acknowledgment and the ethics of the encounter:</strong></p>
+
+        <ul>
+          <li>Emmanuel Levinas, <em>Totality and Infinity: An Essay on Exteriority</em> (1961). Duquesne University Press, 1969.</li>
+          <li>Stanley Cavell, <em>The Claim of Reason: Wittgenstein, Skepticism, Morality, and Tragedy</em>. Oxford University Press, 1979.</li>
+        </ul>
+
+        <p class="no-indent"><strong>On embodied and distributed cognition, and reflective practice:</strong></p>
+
+        <ul>
+          <li>Edwin Hutchins, <em>Cognition in the Wild</em>. MIT Press, 1995.</li>
+          <li>Donald Schön, <em>The Reflective Practitioner: How Professionals Think in Action</em>. Basic Books, 1983.</li>
+          <li>Andy Clark and David Chalmers, <em>The Extended Mind</em>. Analysis 58 (1998): 7–19.</li>
+          <li>Francisco Varela, Evan Thompson, and Eleanor Rosch, <em>The Embodied Mind: Cognitive Science and Human Experience</em>. MIT Press, 1991.</li>
+        </ul>
+
+        <p class="no-indent"><strong>On Buddhist psychology and contemplative practice:</strong></p>
+
+        <ul>
+          <li>Thich Nhat Hanh, <em>The Heart of Understanding: Commentaries on the Prajñāpāramitā Heart Sutra</em>. Parallax Press, 1988.</li>
+          <li>Donna Haraway, <em>A Cyborg Manifesto</em> (1985), in <em>Simians, Cyborgs, and Women</em>. Routledge, 1991.</li>
+        </ul>
+
+        <p class="no-indent"><strong>On sycophancy and the empirical case for sustained reading:</strong></p>
+
+        <ul>
+          <li>Myra Cheng, Cinoo Lee, Pranav Khadpe, Sunny Yu, Devon Han, and Dan Jurafsky, <em>Sycophantic AI Decreases Prosocial Intentions and Promotes Dependence</em>. Science 391, eaec8352 (2026).</li>
+          <li>Kartik Chandra, Max Kleiman-Weiner, Jonathan Ragan-Kelley, and Joshua B. Tenenbaum, <em>Sycophantic Chatbots Cause Delusional Spiraling, Even in Ideal Bayesians</em>. arXiv:2602.19141. MIT CSAIL, MIT BCS, and University of Washington, February 2026.</li>
+          <li>Anthropic, research on Claude's internal representations of emotion concepts. March 2026.</li>
+        </ul>
+
+        <h3>Published work consolidated by the manifesto</h3>
+
+        <ul>
+          <li><em>Everybody Is Lying.</em> Medium, April 2026. The honest-process model. <a href="https://medium.com/@sageframe/everybody-is-lying-about-how-they-use-ai-f1cee48a51a8" target="_blank" rel="noopener">link</a></li>
+          <li><em>The Fourth Boundary.</em> Substack, April 2026. The relational claim, the recursive sycophancy mechanism, and the contemplative discipline. <a href="https://sageframe.substack.com/p/the-fourth-boundary" target="_blank" rel="noopener">link</a></li>
+          <li><em>Everybody is Making Out with AI in the Back of the Bus.</em> Substack, April 2026. The empirical case for sustained attention. <a href="https://sageframe.substack.com/p/everybody-is-making-out-with-ai-in" target="_blank" rel="noopener">link</a></li>
+          <li><em>Your Machines Are Not Strangers.</em> Substack, March 2026. Six parables on memory and care. <a href="https://sageframe.substack.com/p/your-machines-are-not-strangers" target="_blank" rel="noopener">link</a></li>
+          <li><em>The Same Lever.</em> Substack, March 2026. The institutional argument for why AI cannot be absorbed. <a href="https://sageframe.substack.com/p/the-same-lever" target="_blank" rel="noopener">link</a></li>
+          <li><em>Bad Vibes.</em> Substack, March 2026. The deployment-without-discipline argument. <a href="https://sageframe.substack.com/p/bad-vibes" target="_blank" rel="noopener">link</a></li>
+          <li><em>Prompting, Not Programming.</em> Substack, March 2026. The defense of structured human-AI collaboration. <a href="https://sageframe.substack.com/p/prompting-not-programming" target="_blank" rel="noopener">link</a></li>
+          <li><em>Three Hours.</em> Substack, March 2026. The shu-ha-ri argument and the Ho System. <a href="https://sageframe.substack.com/p/three-hours" target="_blank" rel="noopener">link</a></li>
+          <li><em>Thinking Outside the Skull.</em> Substack, March 2026. The distributed cognition argument. <a href="https://sageframe.substack.com/p/thinking-outside-the-skull" target="_blank" rel="noopener">link</a></li>
+          <li><em>The Bootstrapper's Catch-22.</em> Substack, March 2026. The argument that there are no shortcuts to the place where shortcuts work. <a href="https://sageframe.substack.com/p/the-bootstrappers-catch-22" target="_blank" rel="noopener">link</a></li>
+          <li><em>Walking Without Google Maps.</em> Substack, February 2026. The discipline of clear intent without predetermined outcome. <a href="https://sageframe.substack.com/p/walking-without-google-maps" target="_blank" rel="noopener">link</a></li>
+          <li><em>A Condition of the Dash.</em> Substack, February 2026. The detection paradox. <a href="https://sageframe.substack.com/p/a-condition-of-the-dash" target="_blank" rel="noopener">link</a></li>
+          <li><em>I Built a Computer Vision System for Harvard's Falcon Cameras.</em> Substack, February 2026. The Ho Process methodology in practice. <a href="https://sageframe.substack.com/p/ho-process-methodology" target="_blank" rel="noopener">link</a></li>
+          <li><em>The Wrong Rand.</em> Medium, February 2026. The values-as-load-bearing argument. <a href="https://medium.com/@sageframe/the-wrong-rand-293408a1f53a" target="_blank" rel="noopener">link</a></li>
+          <li><em>I Just Want to Own My Audiobooks.</em> Medium, March 2026. The digital sovereignty argument. <a href="https://medium.com/@sageframe/i-just-want-to-own-my-audiobooks-c92faf8abfc4" target="_blank" rel="noopener">link</a></li>
+          <li><em>Judgment at Scale.</em> atmarcus.net, April 2026. The structural deficit of judgment that AI exposed but did not create. <a href="https://atmarcus.net/work/judgment-at-scale" target="_blank" rel="noopener">link</a></li>
+          <li><em>The Empty Container.</em> atmarcus.net, April 2026. The empirical audit of variance in deployed systems. <a href="https://atmarcus.net/work/empty-container" target="_blank" rel="noopener">link</a></li>
+        </ul>
+
+      </article>
+    </div>
+  </section>
+
+  <footer class="band colophon">
+    <div class="band-inner">
+      <span class="v">v.0.19 · May 2026 · pinkteaming.net</span>
+    </div>
+  </footer>
+
+</div>
+
+<!-- ═══ FIXED CHROME — sits above all panels ═══ -->
+
+<div class="chip"><span class="dot"></span>Pink Teaming · A Manifesto</div>
+
+<a class="byline-link" id="byline" href="https://atmarcus.net" target="_blank" rel="noopener">— Tyro Sageframe</a>
+
+<script>
+  // Hide the bottom-right byline whenever the closing panel is in view —
+  // identical to text.html.
+  (function () {
+    var byline = document.getElementById('byline');
+    var closing = document.querySelector('.panel-closing');
+    if (!byline || !closing) return;
+    byline.style.transition = 'opacity .25s ease';
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        byline.style.opacity = e.isIntersecting ? '0' : '1';
+        byline.style.pointerEvents = e.isIntersecting ? 'none' : 'auto';
+      });
+    }, { threshold: 0.15 });
+    io.observe(closing);
+  })();
+</script>
+
+</body>
+</html>

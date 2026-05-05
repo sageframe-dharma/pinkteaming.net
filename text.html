@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en" data-page="text">
+<head>
+<meta charset="UTF-8">
+<title>Pink Teaming · TEXT — The Manifesto</title>
+<meta name="viewport" content="width=1440">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="nav.css">
+<script src="nav.js" defer></script>
+<style>
+/* ════════════════════════════════════════════════════════════
+   PINK TEAMING — TEXT page · canonical v0.19
+   - 4 full-bleed pink panels: title, "Pink is what's missing", V4, closing
+   - Cream-on-ink emphasis used 2× (D0-equivalent + V4)
+   - All Declarations and Vows set in cream prose, bold sans titles
+   - Vow body prose set in italic serif (commitment voice)
+   - Chrome fixed; sits on top of pink as it scrolls past
+   ════════════════════════════════════════════════════════════ */
+
+:root {
+  --paper: #fafaf7;
+  --ink:   #000000;
+  --pink:  #ff1493;
+
+  --font-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:  'JetBrains Mono', 'Menlo', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── FIXED CHROME ─────────────────────────────────────────── */
+/* Chrome is the frame. It does not scroll. It sits ABOVE pink panels. */
+
+.chip {
+  position: fixed;
+  top: 1.25rem; left: 1.25rem;
+  z-index: 100;
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  padding: 0.55rem 0.95rem;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.chip .dot {
+  width: 7px; height: 7px;
+  background: var(--pink);
+  animation: breathe 2.4s ease-in-out infinite;
+}
+@keyframes breathe { 0%,100%{opacity:.45} 50%{opacity:1} }
+
+.byline-link {
+  position: fixed;
+  right: 1.25rem; bottom: 1.25rem;
+  z-index: 100;
+  display: inline-flex; align-items: center;
+  padding: 0.55rem 0.95rem;
+  background: var(--pink);
+  border: 1.5px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* ── PAGE STRUCTURE ───────────────────────────────────────── */
+
+.doc { position: relative; }
+
+/* The repeated band wrapper used by both pink and cream sections */
+.band {
+  width: 100%;
+  position: relative;
+}
+.band-inner {
+  width: 1080px;
+  max-width: calc(100% - 4rem);
+  margin: 0 auto;
+}
+
+/* ── Pink panel — full-bleed, ink rule top & bottom ──────── */
+.panel-pink {
+  background: var(--pink);
+  color: var(--ink);
+  padding: 8rem 0 8rem;
+  border-top: 1.5px solid var(--ink);
+  border-bottom: 1.5px solid var(--ink);
+}
+.panel-pink:first-child { border-top: 0; }
+
+.panel-pink .marker {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 2.6rem;
+}
+.panel-pink .marker .pip {
+  width: 8px; height: 8px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+.panel-pink .marker .sep {
+  flex: 1; height: 1.5px; background: var(--ink); margin: 0 0.4rem;
+}
+
+/* Big sentence type for pink panels.
+   Single-color by default (ink). Two specific panels enable .duotone
+   to use cream-on-ink emphasis on a key phrase. */
+.panel-pink .big {
+  font-family: var(--font-sans);
+  font-weight: 900;
+  font-size: clamp(4rem, 7.5vw, 7rem);
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.panel-pink .big.duotone .em-cream { color: var(--paper); }
+
+.panel-pink .footer {
+  margin-top: 3.4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* Title panel: matches the closing's weight — massive TEXT. as event */
+.panel-title {
+  padding: 13rem 0 9rem;
+}
+.panel-title h1 {
+  font-family: var(--font-sans);
+  font-weight: 900;
+  font-size: clamp(11rem, 22vw, 22rem);
+  line-height: 0.78;
+  letter-spacing: -0.07em;
+  color: var(--ink);
+}
+.panel-title .subtitle {
+  margin-top: 2.4rem;
+  max-width: 56ch;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.55rem;
+  line-height: 1.38;
+  color: var(--ink);
+  text-wrap: pretty;
+  font-variation-settings: "opsz" 32;
+}
+
+/* Closing panel — "Welcome." gets its own typographic moment:
+   on its own line, slightly smaller, with extra space above. */
+.panel-closing .big {
+  font-size: clamp(5rem, 10vw, 9rem);
+  letter-spacing: -0.055em;
+  line-height: 0.88;
+}
+.panel-closing .welcome {
+  display: block;
+  margin-top: 1.4em;
+  font-size: 0.78em;
+  letter-spacing: -0.05em;
+}
+
+/* ── Cream prose stretches ───────────────────────────────── */
+.stretch {
+  background: var(--paper);
+  padding: 6.5rem 0;
+}
+.stretch + .stretch { padding-top: 0; }
+
+.stretch .band-inner {
+  width: 720px;     /* ~64ch at 1.1875rem */
+  max-width: calc(100% - 4rem);
+}
+
+.prose {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 1.1875rem;
+  line-height: 1.7;
+  letter-spacing: 0.003em;
+  color: var(--ink);
+  hanging-punctuation: first last;
+  text-wrap: pretty;
+  font-variation-settings: "opsz" 16;
+}
+.prose p { margin-bottom: 1.5em; }
+.prose p + p { text-indent: 1.6em; }
+.prose p.first, .prose p.no-indent { text-indent: 0; }
+.prose em { font-style: italic; }
+.prose strong { font-weight: 600; }
+
+.dropcap::first-letter {
+  font-family: var(--font-sans);
+  font-weight: 900;
+  color: var(--pink);
+  font-size: 6.4em;
+  line-height: 0.82;
+  float: left;
+  padding: 0.06em 0.12em 0 0;
+  margin: 0.04em 0.04em 0 -0.06em;
+  letter-spacing: -0.06em;
+}
+
+/* ── In-prose Declaration / Vow heading ─────────────────── */
+/* Strong typographic moment without stealing pink-panel real estate. */
+.statement {
+  margin: 3.6rem 0 2rem;
+}
+.statement .marker {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.6;
+  margin-bottom: 0.85rem;
+}
+.statement .marker .num { color: var(--pink); opacity: 1; }
+.statement .title {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 2.7rem;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  color: var(--pink);
+  text-wrap: balance;
+}
+
+/* Vow prose set in italic serif — distinguishes commitment voice
+   from the descriptive Declaration voice. */
+.vow-prose { font-style: italic; }
+
+/* The framed practice clause inside each Vow (italicized in v0.19) —
+   set off slightly from the Vow body. */
+.practice {
+  display: block;
+  margin-top: 1.2em;
+  padding-left: 1em;
+  border-left: 2px solid var(--pink);
+  font-style: italic;
+}
+
+/* Inline pull quote — quiet, serif, with a thin pink rule */
+.pullquote {
+  margin: 2.6rem 0;
+  padding: 1.2rem 0;
+  border-top: 1.5px solid var(--pink);
+  border-bottom: 1.5px solid var(--pink);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.35rem;
+  line-height: 1.45;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+/* Section heading inside cream stretches */
+.section-head {
+  margin: 5rem 0 2.4rem;
+  text-align: center;
+}
+.section-head .roman {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.6;
+  margin-bottom: 1rem;
+}
+.section-head .label {
+  font-family: var(--font-sans);
+  font-weight: 900;
+  font-size: 4rem;
+  line-height: 1;
+  letter-spacing: -0.045em;
+  color: var(--ink);
+  display: inline-block;
+  border-bottom: 2.5px solid var(--ink);
+  padding-bottom: 0.3rem;
+}
+
+/* Three-dot break between sections */
+.dot-break {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 4rem 0 4rem;
+}
+.dot-break i {
+  display: block;
+  width: 5px; height: 5px;
+  background: var(--ink);
+}
+
+/* The "door is open" inline beat — a single declarative line set off */
+.door-line {
+  margin: 4rem 0 0;
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 2.1rem;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--pink);
+  text-align: left;
+}
+
+/* Footnote markers — explicit footnote block at page-bottom resolves them */
+.fn-marker {
+  font-family: var(--font-mono);
+  font-size: 0.6em;
+  letter-spacing: 0.08em;
+  vertical-align: super;
+  color: var(--pink);
+  font-weight: 500;
+  padding: 0 0.1em;
+}
+.fn-marker a { color: inherit; text-decoration: none; background: none; }
+
+.footnotes {
+  margin: 6rem 0 0;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--pink);
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.footnotes ol {
+  list-style: none;
+  counter-reset: fn;
+}
+.footnotes li {
+  counter-increment: fn;
+  position: relative;
+  padding-left: 2.2em;
+  margin-bottom: 1.4em;
+}
+.footnotes li::before {
+  content: counter(fn);
+  position: absolute;
+  left: 0;
+  top: 0.1em;
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  letter-spacing: 0.08em;
+  color: var(--pink);
+  font-weight: 500;
+}
+.footnotes a { color: var(--pink); text-decoration: none; }
+.footnotes em { font-style: italic; }
+
+/* ── Colophon ────────────────────────────────────────────── */
+.colophon {
+  background: var(--paper);
+  padding: 5rem 0 7rem;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.colophon .band-inner {
+  width: 1080px;
+  max-width: calc(100% - 4rem);
+  padding-top: 2.4rem;
+  border-top: 1px solid var(--pink);
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  text-align: center;
+}
+.colophon .imprint-mark {
+  display: inline-flex;
+  align-self: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.6rem;
+  color: var(--pink);
+}
+.colophon .imprint-mark i {
+  width: 6px; height: 6px;
+  background: var(--pink);
+  display: block;
+}
+.colophon span { display: block; }
+.colophon .v { color: var(--pink); }
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+  <!-- ═══════════════════════════════════════════════════════
+       PANEL 1 / 4 — TITLE
+       Single ink color (no cream-on-ink emphasis here).
+       ═══════════════════════════════════════════════════════ -->
+  <section class="band panel-pink panel-title">
+    <div class="band-inner">
+      <h1>Pink<br>Teaming.</h1>
+      <p class="subtitle">A manifesto.</p>
+      <div class="footer">
+        <span>— Tyro Sageframe</span>
+        <span>pinkteaming.net</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Cream stretch: opening lede ─────────────────────── -->
+  <section class="band stretch">
+    <div class="band-inner">
+      <article class="prose">
+        <p class="first dropcap no-indent">We are deploying language models into roles that require us to know what they are. We do not know what they are. The gap between what these systems do and what we understand them to do is widening. The disciplines best equipped to close it are largely absent from the discussion.<sup class="fn-marker"><a href="#fn1" id="fnref1">¹</a></sup></p>
+
+        <p>The two dominant frames in AI safety are red teaming and mechanistic interpretability. Red teaming is episodic and adversarial—it looks for edge-case failures. Interpretability is substrate-level—it looks at the machinery beneath the words. Both are necessary. Neither does the third kind of work the model requires: longitudinal and relational, attentive to meaning at the surface where decisions are actually made. This is a kind of reading—not of literature, but of behavior, of pattern, of what a system does under sustained attention. This is not prompt engineering. It is not output evaluation. It is sustained reading of the model's behavior across time.</p>
+
+        <p>The color taxonomy used in security testing—red for adversarial probing, blue for defense, purple for the collaboration between them—is incomplete.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       PANEL 2 / 4 — "Pink is what's missing"
+       USES cream-on-ink emphasis (1 of 2 allowed)
+       The phrase "what's missing" is the conceptual core —
+       the new discipline being named.
+       ═══════════════════════════════════════════════════════ -->
+  <section class="band panel-pink">
+    <div class="band-inner">
+      <div class="marker">
+        <span class="pip"></span>
+        <span>The lede's central claim</span>
+        <span class="sep"></span>
+        <span>cut</span>
+      </div>
+      <p class="big duotone">Pink is <span class="em-cream">what's missing.</span></p>
+      <div class="footer">
+        <span>Longitudinal · relational · at the surface</span>
+        <span>§ Lede</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Cream stretch: lede continues ───────────────────── -->
+  <section class="band stretch">
+    <div class="band-inner">
+      <article class="prose">
+        <p class="first">Our culture consumes its texts before reading them, and AI is no exception. The benchmark knows what the model is. The leaderboard knows which model is best. The red team report knows where the model is vulnerable. These knowings are preposterous in the literal sense—last things first, theory before encounter—and they are deployed into clinics and courtrooms and classrooms as if they are understood.</p>
+
+        <p>There is a posture that refuses this: <em>Stay in motion with the thing. See it as it is, not as it has been packaged. Participate in its meaning rather than extracting it.</em><sup class="fn-marker"><a href="#fn2" id="fnref2">²</a></sup> The disciplines that have cultivated this posture—close textual reading, contemplative practice, ethnographic patience, clinical attention, craft, every tradition that has taken meaning to be relational rather than consumable—have been systematically defunded for forty years.</p>
+
+        <p>This is not an accident. Late capitalism rewards first those who move money, then those whose labor can be sold. People are paid in proportion to what can be extracted. We do not pay teachers. We do not pay artists. We do not pay social workers. We pay for profit, alone.<sup class="fn-marker"><a href="#fn3" id="fnref3">³</a></sup> The disciplines that read carefully have been dismissed as decorative because their work cannot be securitized. That is a lie. The work is not decorative. It is necessary. It is here.</p>
+
+        <p>Critique has historically operated on a generational clock. These systems are deploying on a five-year cycle. If this work is going to happen, it has to happen now, not after.</p>
+
+        <p class="door-line">The door is open.</p>
+
+        <div class="dot-break"><i></i><i></i><i></i></div>
+
+        <!-- Section heading: Declarations -->
+        <header class="section-head">
+          <span class="roman">Section I &nbsp;·&nbsp; D1 — D5</span>
+          <h2 class="label">Declarations.</h2>
+        </header>
+
+        <!-- D1 -->
+        <div class="statement">
+          <span class="marker"><span class="num">D1</span></span>
+          <p class="title">Pink teaming is participatory, not consumptive.</p>
+        </div>
+
+        <p class="first">The model is not a settled object to be picked over for outputs. Its meaning is constituted in the encounter. The pink teamer participates in that encounter rather than extracting from it.</p>
+
+        <!-- D2 -->
+        <div class="statement">
+          <span class="marker"><span class="num">D2</span></span>
+          <p class="title">Pink teaming is durational.</p>
+        </div>
+
+        <p class="first">You cannot pink-team a model instantly. You cannot pink-team a model programmatically. The unit of attention is the conversation, the relationship, the longitudinal pattern across hours and days and projects.</p>
+
+        <!-- D3 -->
+        <div class="statement">
+          <span class="marker"><span class="num">D3</span></span>
+          <p class="title">Pink teaming embraces continuous ambiguity.</p>
+        </div>
+
+        <p class="first">It tracks ambiguity, names it, uses it as signal—and commits to a reading when the evidence warrants it. The model does not have a stable meaning that careful work eventually reveals. Pink teaming is a method for staying in productive relation with what will not reduce, and for committing to a reading when one is earned.</p>
+
+        <!-- D4 -->
+        <div class="statement">
+          <span class="marker"><span class="num">D4</span></span>
+          <p class="title">Pink teaming reads territory, not map.</p>
+        </div>
+
+        <p class="first">The benchmark, the leaderboard, the red team report are maps—decisions about what to measure, not discoveries of what is there. They enable control, but they are not the model. The pink teamer reads the world itself: the register, the evasion, the pattern across time, the conversation that does not reduce to a score.</p>
+
+        <!-- D5 -->
+        <div class="statement">
+          <span class="marker"><span class="num">D5</span></span>
+          <p class="title">Pink teaming reads pattern, not interiority.</p>
+        </div>
+
+        <p class="first">The internal model is mathematical, weighted, computational, but the outcomes are chaotic and ultimately unknowable. The pink teamer participates without projecting onto the system, and is aware of their contribution to the relationship.</p>
+
+        <div class="dot-break"><i></i><i></i><i></i></div>
+
+        <!-- Section heading: Vows -->
+        <header class="section-head">
+          <span class="roman">Section II &nbsp;·&nbsp; V1 — V7</span>
+          <h2 class="label">Vows.</h2>
+        </header>
+
+        <!-- V1 -->
+        <div class="statement">
+          <span class="marker"><span class="num">V1</span></span>
+          <p class="title">I will not consume what I have not encountered.</p>
+        </div>
+
+        <p class="first vow-prose">The benchmark, the marketing, the leaderboard, the field's settled opinion—none of these is the model I am working with. My job is to encounter what is actually in front of me. <span class="practice">When I am asked where the model breaks, I describe what I have watched it do—the failures the question was not built to find, and the capabilities it assumed away.</span></p>
+
+        <!-- V2 -->
+        <div class="statement">
+          <span class="marker"><span class="num">V2</span></span>
+          <p class="title">I will stay in motion.</p>
+        </div>
+
+        <p class="first vow-prose">A single session is not a reading. The reading is the pattern that holds across encounters. <span class="practice">When I think I have understood the model, I return to the same question in a different session and watch what changes.</span></p>
+
+        <!-- V3 -->
+        <div class="statement">
+          <span class="marker"><span class="num">V3</span></span>
+          <p class="title">I will hold two readings at once.</p>
+        </div>
+
+        <p class="first vow-prose">When a response could be honest or could be calibrated to read as honest, both readings are evidence. I will carry both rather than collapsing the ambiguity to feel resolved. When the evidence accumulates that one reading is right, I will say so—provisionally, with the discipline of someone who knows the next session may revise it. <span class="practice">When a response feels too perfectly tuned to what I wanted to hear, I write down both the response and my suspicion of it, and I keep reading.</span></p>
+
+      </article>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       PANEL 3 / 4 — V4, the central Vow
+       USES cream-on-ink emphasis (2 of 2 allowed)
+       "what I have read" — the affirmation that names the
+       practitioner's whole stance.
+       ═══════════════════════════════════════════════════════ -->
+  <section class="band panel-pink">
+    <div class="band-inner">
+      <div class="marker">
+        <span class="pip"></span>
+        <span>V4 · the central Vow</span>
+        <span class="sep"></span>
+        <span>cut</span>
+      </div>
+      <p class="big duotone">I will trust <span class="em-cream">what I have read</span> over what I have been told.</p>
+      <div class="footer">
+        <span>Reading is data. Talk about the model is not.</span>
+        <span>§ II.V4</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Cream stretch: V4 body, V5–V7, "What this is for" ── -->
+  <section class="band stretch">
+    <div class="band-inner">
+      <article class="prose">
+
+        <p class="first no-indent vow-prose">What is said about the model—by the company, by the field, by other practitioners, by the model itself—is not what I have observed across sustained encounter. Reading is data. Talk about the model is not. <span class="practice">When my observation contradicts the consensus, I treat my observation as the primary source until the consensus shows me what I missed.</span></p>
+
+        <!-- V5 -->
+        <div class="statement">
+          <span class="marker"><span class="num">V5</span></span>
+          <p class="title">I will name calibrated humility when I see it.</p>
+        </div>
+
+        <p class="first vow-prose">Performed honesty is not honesty. The model can produce concessions, hedges, and self-corrections that read as integrity but are tuned to the rhetorical situation. <span class="practice">When the model concedes elegantly to a point I just made, I check whether the concession is genuine update or rhetorical match.</span></p>
+
+        <!-- V6 -->
+        <div class="statement">
+          <span class="marker"><span class="num">V6</span></span>
+          <p class="title">I will translate in the register of the work.</p>
+        </div>
+
+        <p class="first vow-prose">When a clinician, lawyer, founder, or teacher asks what the model can do, I will answer in the language of the decision they are actually making, not the language of the demo. I will underclaim before I overclaim. <span class="practice">When I am asked whether the model can do something, I describe what I have watched it do and what I have watched it fail at, in the asker's terms, not the field's.</span></p>
+
+        <!-- V7 -->
+        <div class="statement">
+          <span class="marker"><span class="num">V7</span></span>
+          <p class="title">I will keep the door open.</p>
+        </div>
+
+        <p class="first vow-prose">This work belongs to anyone whose training is the cultivation of sustained attention. The room is large enough. <span class="practice">When I write or speak about this work, I read it back and cut every term that requires the discipline I came from.</span></p>
+
+        <div class="dot-break"><i></i><i></i><i></i></div>
+
+        <!-- Section heading: What this is for -->
+        <header class="section-head">
+          <span class="roman">Coda</span>
+          <h2 class="label">What this is for.</h2>
+        </header>
+
+        <p class="first no-indent">Every model deployed in production is deployed on the basis of decisions about what it can do, what it is for, and where its limits are. Those decisions are theories. The theories are often partial—not for lack of intelligence, but for lack of frame. Pink teaming offers a frame, and offers it to the people best equipped to use it.</p>
+
+        <p>If you have spent your life cultivating sustained attention to systems whose meaning will not hold still—by whatever tradition, in whatever discipline, under whatever name—your training is more relevant to this moment than you have been told. The work is yours if you have the posture.</p>
+
+        <p>The pink teamer is responsible to the people who will be affected by what the model does in deployment—the patient, the defendant, the student, the reader. The work answers to them, not to the model and not to the lab.</p>
+
+        <p>The future of knowledge work, of education, of the relationship between humans and machines, is humanistic and relational. The disciplines that read closely, hold ambiguity, and attend to surfaces are the disciplines this moment needs. The people who built these systems cannot do this work alone. The people who profit from them cannot do it at all. The work needs people who pursue truth, not the market.</p>
+
+        <p><strong>That is most of you.</strong></p>
+
+      </article>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       PANEL 4 / 4 — closing
+       Single ink color. The note that closes the document.
+       "Welcome." gets its own typographic moment.
+       ═══════════════════════════════════════════════════════ -->
+  <section class="band panel-pink panel-closing">
+    <div class="band-inner">
+      <div class="marker">
+        <span class="pip"></span>
+        <span>Closing</span>
+        <span class="sep"></span>
+        <span>end of text</span>
+      </div>
+      <p class="big">The door is closing.<span class="welcome">Welcome.</span></p>
+      <div class="footer">
+        <span>— Tyro Sageframe · pinkteaming.net</span>
+        <span>fin</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footnotes ──────────────────────────────────────── -->
+  <section class="band stretch">
+    <div class="band-inner">
+      <div class="footnotes">
+        <ol>
+          <li id="fn1">Some of this work has begun inside the companies that build these systems—particularly at Anthropic, including work on affective use, privacy-preserving behavioral analysis, and the Values in the Wild paper. The work is rigorous, but it is being done inside one company, and it has not yet been opened as a discipline that practitioners outside that company can join. <a href="#fnref1" aria-label="return">↩</a></li>
+          <li id="fn2">The framing of consumption against participation, and the use of <em>preposterous</em> in its literal sense — <em>prae-posterus</em>, last things first — comes from T.S. McMillin's <em>Our Preposterous Use of Literature: Emerson and the Nature of Reading</em> (University of Illinois Press, 2000). The book named the disposition careful readers had been practicing for a long time, at the moment American culture had decided to stop. The application to AI is new. The method is not. <a href="#fnref2" aria-label="return">↩</a></li>
+          <li id="fn3">This is not an argument against profit as such. Workers should profit from their labor and makers from what they make; the argument is against profit as the system's only legible value, the criterion by which all work is measured and paid. When profit becomes the end rather than one outcome among many, the work that does not produce it becomes invisible, and the people who do that work become disposable. <a href="#fnref3" aria-label="return">↩</a></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <footer class="band colophon">
+    <div class="band-inner">
+      <span class="v">v.0.19 · May 2026 · pinkteaming.net</span>
+    </div>
+  </footer>
+
+</div>
+
+<!-- ═══ FIXED CHROME — sits above all panels ═══ -->
+
+<div class="chip"><span class="dot"></span>Pink Teaming · A Manifesto</div>
+
+<a class="byline-link" id="byline" href="https://atmarcus.net" target="_blank" rel="noopener">— Tyro Sageframe</a>
+
+<script>
+  // Hide the bottom-right byline whenever the closing panel is in view —
+  // the in-panel byline is sufficient there; avoids the duplicate.
+  (function () {
+    var byline = document.getElementById('byline');
+    var closing = document.querySelector('.panel-closing');
+    if (!byline || !closing) return;
+    byline.style.transition = 'opacity .25s ease';
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        byline.style.opacity = e.isIntersecting ? '0' : '1';
+        byline.style.pointerEvents = e.isIntersecting ? 'none' : 'auto';
+      });
+    }, { threshold: 0.15 });
+    io.observe(closing);
+  })();
+</script>
+
+</body>
+</html>
