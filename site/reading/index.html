@@ -669,8 +669,280 @@ clamped to [2.0, 7.0]</code></pre>
     </div>
   </section>
 
-  <!-- ═══ Chunks 3–5 will append additional <section class="band stretch"> blocks here:
-           §3 (deep) · §4 (sky) · §5 (discipline)
+  <!-- ── Cream stretch: §3 (the deep, geometry that will not speak) ─── -->
+  <section class="band stretch">
+    <div class="band-inner">
+      <article class="prose">
+
+        <header class="section-head" id="section-3">
+          <span class="roman">Section 03</span>
+          <span class="label">The deep, geometry that will not speak.</span>
+          <span class="level">Level 3 · Two demos, real math</span>
+        </header>
+
+        <p class="first no-indent">Below the surface band there is a quiet field of small black dots arranged in a pattern that is structured but not obvious. As the reading progresses, parts of the field illuminate pink—clusters of dots glowing for a few moments, then fading as the active line moves on. This is the <em>deep</em>.</p>
+
+        <p>Each dot is a sentence from the manifesto. There are 103 of them. The position of each dot was determined by an algorithm that read the manifesto and assigned each sentence a coordinate in the algorithm's own internal sense of where that sentence sits in the geometry of meaning. The coordinates are real. They were computed. The clustering you see—sentences about consumption gathering in one region, the Vows clumping into another, the closing line sitting somewhere distinctive—is real.</p>
+
+        <p>But the coordinates do not say anything. They are positions in a 384-dimensional space the model uses to compute. Two sentences that mean similar things end up near each other in that space; two that mean different things end up far apart. The space is the model's calibration. The position is not a statement. The model has not interpreted the manifesto. It has <em>located</em> it.</p>
+
+        <h3>Watching the model locate things</h3>
+
+        <p class="no-indent">When the model reads a sentence, the first thing it does is convert it to coordinates. That conversion is not a metaphor. It is the entire substrate of what the model "knows" before any other operation runs. Two sentences become near or far in this geometry, and everything downstream—every retrieval, every similarity score, every recommendation, every guardrail—runs on top of that geometry.</p>
+
+        <p>Pick any two units from the manifesto. The page looks up their precomputed embeddings, projects both into the 2D layout the rest of the page uses, and draws them with a line between them. The cosine distance—the model's actual measure of how similar two things are—displays underneath.</p>
+
+        <!-- ── Demo 2 — Embedding pair (data-wired to ../data/embeddings.json layouts.0) ── -->
+        <div class="demo" id="demo-embedding" role="group" aria-label="Embedding pair distance demo: pick two manifesto sentences from the dropdowns to see their projected positions and distance.">
+          <div class="demo-caption">Pick two sentences. Watch where the model places them. The distance between them is what the model uses for everything else.</div>
+          <div class="demo-controls demo-pickers">
+            <select id="demo-embed-a" aria-label="First sentence selector"></select>
+            <select id="demo-embed-b" aria-label="Second sentence selector"></select>
+          </div>
+          <canvas id="demo-embed-canvas" width="600" height="320"></canvas>
+          <div class="demo-stats" id="demo-embed-stats">Loading data…</div>
+        </div>
+        <script>
+        (function () {
+          // Curated subset — the IDs are pedagogically chosen to surface meaningful contrasts.
+          const CURATED_IDS = [
+            "u014", "u039", "u043", "u051", "u058",
+            "u062", "u084", "u005", "u006", "u099", "u102"
+          ];
+
+          const canvas = document.getElementById('demo-embed-canvas');
+          const ctx = canvas.getContext('2d');
+          const selA = document.getElementById('demo-embed-a');
+          const selB = document.getElementById('demo-embed-b');
+          const statsEl = document.getElementById('demo-embed-stats');
+
+          let PAIRS = null;
+
+          function dist(a, b) {
+            // Euclidean distance in the projected 2D space — a stand-in for the
+            // cosine distance the model actually computes in 384D. The relationship
+            // is monotonic for nearby points; the next demo shows where it breaks.
+            const dx = a.x - b.x, dy = a.y - b.y;
+            return Math.sqrt(dx * dx + dy * dy);
+          }
+
+          function render() {
+            if (!PAIRS) return;
+            const W = canvas.width, H = canvas.height;
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = 'rgba(0,0,0,0.18)';
+            PAIRS.forEach(p => {
+              ctx.beginPath();
+              ctx.arc(p.x * W, p.y * H, 3, 0, Math.PI * 2);
+              ctx.fill();
+            });
+            const a = PAIRS[+selA.value];
+            const b = PAIRS[+selB.value];
+            if (!a || !b) return;
+            ctx.strokeStyle = 'rgba(255,20,147,0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(a.x * W, a.y * H);
+            ctx.lineTo(b.x * W, b.y * H);
+            ctx.stroke();
+            [a, b].forEach((p) => {
+              ctx.fillStyle = '#ff1493';
+              ctx.beginPath();
+              ctx.arc(p.x * W, p.y * H, 7, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillStyle = '#000';
+              ctx.font = '11px JetBrains Mono, Menlo, monospace';
+              ctx.fillText(p.id, p.x * W + 12, p.y * H + 4);
+            });
+            const d = dist(a, b);
+            statsEl.innerHTML = `<strong>${a.id}</strong> ↔ <strong>${b.id}</strong> · projected distance ${d.toFixed(3)}`;
+          }
+
+          Promise.all([
+            fetch('../data/embeddings.json').then(r => r.json()),
+            fetch('../data/manifesto-units.json').then(r => r.json())
+          ]).then(([embeds, units]) => {
+            const idToIndex = {};
+            embeds.unit_ids_in_order.forEach((id, i) => { idToIndex[id] = i; });
+            const idToText = {};
+            units.units.forEach(u => { idToText[u.id] = u.text; });
+            const layout0 = embeds.layouts['0'];
+
+            PAIRS = CURATED_IDS.map(id => {
+              const idx = idToIndex[id];
+              const text = idToText[id];
+              if (idx === undefined || !text) return null;
+              return { id, text, x: layout0[idx][0], y: layout0[idx][1] };
+            }).filter(Boolean);
+
+            PAIRS.forEach((p, i) => {
+              const trim = p.text.length > 50 ? p.text.slice(0, 50) + '…' : p.text;
+              const opt = document.createElement('option');
+              opt.value = i;
+              opt.textContent = `${p.id} — ${trim}`;
+              selA.appendChild(opt.cloneNode(true));
+              selB.appendChild(opt);
+            });
+            // Default selections: first and last in curated list — distant pair
+            selA.value = 1;
+            selB.value = 7;
+            render();
+            selA.addEventListener('change', render);
+            selB.addEventListener('change', render);
+          }).catch(err => {
+            statsEl.textContent = 'Failed to load embedding data.';
+            console.error('demo-embedding load:', err);
+          });
+        })();
+        </script>
+
+        <p>What you are watching is <em>the model's only sense of similarity</em>. It is not a thought. It is not an interpretation. It is the geometric prior that everything else runs on top of.</p>
+
+        <p>The model used here is a generic one—a small open-source sentence encoder called <code>all-MiniLM-L6-v2</code>, released by Microsoft researchers in 2021. We did not fine-tune it on the manifesto. The choice was methodological. If we had trained a custom model on this text, the clusters would form <em>because we taught the model they should form.</em> By using a generic model, we let an outside observer locate the manifesto's sentences in <em>its</em> sense of meaning-space. Whatever clusters emerge are clusters the manifesto's text actually warrants—visible to a system that has no investment in confirming the work.</p>
+
+        <p><em>I will not consume what I have not encountered.</em> The encounter has to be with the actual text, processed by an instrument with no stake in the result. If the model loved the manifesto, you'd never know whether the geometry was real or whether you'd hired a flatterer.</p>
+
+        <h3>The shadow cast by the geometry</h3>
+
+        <p class="no-indent">The 384-dimensional space is real. Humans see in two. Some translation has to happen. The translation is done by an algorithm called UMAP—Uniform Manifold Approximation and Projection—which takes the high-dimensional shape of the manifesto's sentences and projects it down to two dimensions while preserving the distances as well as the projection allows.</p>
+
+        <p>UMAP is honest about what it can do. The 2D shape is not the 384D shape. It is a shadow cast by it. Some neighborhoods are preserved well. Some are distorted. Run UMAP twice with different random starting states and you get two slightly different shadows of the same underlying structure.</p>
+
+        <p>The page knows this and does something with it: it picks one of eight precomputed UMAP runs at random when it loads, so a returning visitor sees the cloud rotated, scaled, or oriented slightly differently each time. The structural relationships persist. The exact rendering varies. This is not a bug. It is the page being honest about the limits of the projection.</p>
+
+        <p>The demonstration below is the eight runs, swappable. Move the slider and watch the cloud rearrange. Some clusters stay tight across every seed—those are real neighborhoods in the model's geometry. Some points wander a lot—those relationships are projection artifacts.</p>
+
+        <!-- ── Demo 3 — UMAP eight seeds (data-wired to all 8 layouts) ── -->
+        <div class="demo" id="demo-umap" role="group" aria-label="UMAP eight-seeds demo: drag the slider to swap between the eight projections of the same embeddings.">
+          <div class="demo-caption">Eight UMAP runs of the same embeddings. Drag the slider. Watch what stays put and what wanders.</div>
+          <canvas id="demo-umap-canvas" width="600" height="380"></canvas>
+          <div class="demo-controls demo-slider">
+            <label for="demo-umap-slider">seed <span id="demo-umap-seed">0</span></label>
+            <input type="range" id="demo-umap-slider" min="0" max="7" value="0" step="1" aria-label="UMAP seed 0 through 7">
+          </div>
+          <div class="demo-stats" id="demo-umap-stats">Loading layouts…</div>
+        </div>
+        <script>
+        (function () {
+          // Curated 30-unit slice spanning lede / declarations / vows / closing.
+          const CURATED_IDS = [
+            "u005","u006","u008","u009","u014","u019","u020","u029","u030","u038",
+            "u039","u041","u043","u046","u051","u054","u055","u057","u058","u062",
+            "u066","u071","u076","u080","u084","u095","u097","u099","u101","u102"
+          ];
+
+          const canvas = document.getElementById('demo-umap-canvas');
+          const ctx = canvas.getContext('2d');
+          const slider = document.getElementById('demo-umap-slider');
+          const seedLabel = document.getElementById('demo-umap-seed');
+          const statsEl = document.getElementById('demo-umap-stats');
+
+          let LAYOUTS = null;     // [seed][i] = [x, y]
+          let mostInvariantIdx = -1;
+          let mostUnstableIdx = -1;
+          let currentSeed = 0;
+          let targetSeed = 0;
+          let interpAmt = 1;
+          let raf = null;
+
+          function render() {
+            if (!LAYOUTS) return;
+            const W = canvas.width, H = canvas.height;
+            ctx.clearRect(0, 0, W, H);
+            const from = LAYOUTS[currentSeed];
+            const to = LAYOUTS[targetSeed];
+            CURATED_IDS.forEach((u, i) => {
+              const x = from[i][0] * (1 - interpAmt) + to[i][0] * interpAmt;
+              const y = from[i][1] * (1 - interpAmt) + to[i][1] * interpAmt;
+              const isInvariant = i === mostInvariantIdx;
+              const isUnstable = i === mostUnstableIdx;
+              ctx.fillStyle = isInvariant
+                ? 'rgba(255,20,147,0.9)'
+                : isUnstable
+                  ? 'rgba(0,0,0,0.9)'
+                  : 'rgba(0,0,0,0.35)';
+              ctx.beginPath();
+              ctx.arc(x * W, y * H, isInvariant || isUnstable ? 5 : 3, 0, Math.PI * 2);
+              ctx.fill();
+              if (isInvariant) {
+                ctx.fillStyle = 'rgba(255,20,147,1)';
+                ctx.font = '10px JetBrains Mono, Menlo, monospace';
+                ctx.fillText('invariant', x * W + 8, y * H - 4);
+              }
+              if (isUnstable) {
+                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                ctx.font = '10px JetBrains Mono, Menlo, monospace';
+                ctx.fillText('unstable', x * W + 8, y * H - 4);
+              }
+            });
+          }
+
+          function animate() {
+            if (interpAmt < 1) {
+              interpAmt = Math.min(1, interpAmt + 0.06);
+              render();
+              raf = requestAnimationFrame(animate);
+            } else {
+              currentSeed = targetSeed;
+              raf = null;
+            }
+          }
+
+          fetch('../data/embeddings.json').then(r => r.json()).then(embeds => {
+            const idToIndex = {};
+            embeds.unit_ids_in_order.forEach((id, i) => { idToIndex[id] = i; });
+
+            // Build LAYOUTS in CURATED_IDS order, one row per seed.
+            LAYOUTS = [0, 1, 2, 3, 4, 5, 6, 7].map(seed =>
+              CURATED_IDS.map(id => {
+                const idx = idToIndex[id];
+                return embeds.layouts[String(seed)][idx];
+              })
+            );
+
+            // Compute per-unit variance across all 8 seeds (sum of x and y variance).
+            const variance = CURATED_IDS.map((_, i) => {
+              const xs = LAYOUTS.map(l => l[i][0]);
+              const ys = LAYOUTS.map(l => l[i][1]);
+              const mx = xs.reduce((a, b) => a + b, 0) / xs.length;
+              const my = ys.reduce((a, b) => a + b, 0) / ys.length;
+              return xs.reduce((acc, x, j) => acc + (x - mx) ** 2 + (ys[j] - my) ** 2, 0) / xs.length;
+            });
+            mostInvariantIdx = variance.indexOf(Math.min(...variance));
+            mostUnstableIdx = variance.indexOf(Math.max(...variance));
+
+            slider.addEventListener('input', () => {
+              const newSeed = +slider.value;
+              seedLabel.textContent = newSeed;
+              if (newSeed !== targetSeed) {
+                currentSeed = targetSeed;
+                targetSeed = newSeed;
+                interpAmt = 0;
+                if (raf) cancelAnimationFrame(raf);
+                animate();
+              }
+              statsEl.innerHTML = `seed ${newSeed} · pink point: stays put across all 8 seeds (real neighborhood) · black-labeled point: wanders the most (projection artifact)`;
+            });
+
+            render();
+            statsEl.innerHTML = `seed 0 · pink point: stays put across all 8 seeds (real neighborhood) · black-labeled point: wanders the most (projection artifact)`;
+          }).catch(err => {
+            statsEl.textContent = 'Failed to load layouts.';
+            console.error('demo-umap load:', err);
+          });
+        })();
+        </script>
+
+        <p>The lesson generalizes past this page. Every visualization of high-dimensional model behavior—saliency maps, attention heatmaps, embedding plots in research papers—is a projection. A choice was made about how to compress what the model "knows" into something the human eye can read. That choice carries information loss that is rarely shown to the reader. UMAP at least lets you see the loss by varying the seed.</p>
+
+        <p>Pink teaming reads the projection as a projection. Not the territory. <em>The map is not the territory.</em> The page shows you eight maps of the same territory and lets you watch them disagree.</p>
+
+      </article>
+    </div>
+  </section>
+
+  <!-- ═══ Chunks 4–5 will append additional <section class="band stretch"> blocks here:
+           §4 (sky) · §5 (discipline)
            a pink panel-closing, the footer-note stretch, and the colophon.
        ═══ -->
 
