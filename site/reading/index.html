@@ -404,6 +404,27 @@ html, body {
   letter-spacing: 0.04em;
   text-indent: 0;
 }
+/* Hover-reveal sentence text under embedding-pair demo. Reserves a
+   2-line slot so dots in the cloud don't reflow the layout when hovered. */
+.demo-hover {
+  margin-top: 0.6rem;
+  min-height: 2.6em;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  color: var(--ink);
+  opacity: 0.85;
+  text-indent: 0;
+}
+.demo-hover strong {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--pink);
+  margin-right: 0.6rem;
+}
 .demo canvas {
   display: block;
   width: 100%;
@@ -692,100 +713,188 @@ clamped to [2.0, 7.0]</code></pre>
 
         <p>Pick any two units from the manifesto. The page looks up their precomputed embeddings, projects both into the 2D layout the rest of the page uses, and draws them with a line between them. The cosine distance—the model's actual measure of how similar two things are—displays underneath.</p>
 
-        <!-- ── Demo 2 — Embedding pair (data-wired to ../data/embeddings.json layouts.0) ── -->
-        <div class="demo" id="demo-embedding" role="group" aria-label="Embedding pair distance demo: pick two manifesto sentences from the dropdowns to see their projected positions and distance.">
-          <div class="demo-caption">Pick two sentences. Watch where the model places them. The distance between them is what the model uses for everything else.</div>
+        <!-- ── Demo 2 — Embedding pair (full 384-dim cosine, all 103 units, hover-reveal) ── -->
+        <div class="demo" id="demo-embedding" role="group" aria-label="Embedding pair demo: pick two manifesto sentences to see their cosine distance. Hover any dot in the cloud to read the sentence it represents.">
+          <div class="demo-caption">Pick two sentences. Watch where the model places them. Hover any dot to read the sentence it represents.</div>
           <div class="demo-controls demo-pickers">
             <select id="demo-embed-a" aria-label="First sentence selector"></select>
             <select id="demo-embed-b" aria-label="Second sentence selector"></select>
           </div>
           <canvas id="demo-embed-canvas" width="600" height="320"></canvas>
           <div class="demo-stats" id="demo-embed-stats">Loading data…</div>
+          <div class="demo-hover" id="demo-embed-hover" aria-live="polite"></div>
         </div>
         <script>
         (function () {
-          // Curated subset — the IDs are pedagogically chosen to surface meaningful contrasts.
-          const CURATED_IDS = [
-            "u014", "u039", "u043", "u051", "u058",
-            "u062", "u084", "u005", "u006", "u099", "u102"
-          ];
+          // Full 384-dim cosine over all 103 units. Vectors come from the same
+          // sentence-encoder build pipeline that produced the UMAP layouts;
+          // they're L2-normalized at build time, so cosine similarity here is
+          // just a dot product, and cosine distance is 1 − dot.
+          //
+          // The 2D positions on screen are the seed-0 UMAP projection (a
+          // shadow of the 384D shape). The displayed distance is computed in
+          // 384D — what the model actually uses. The next demo shows where
+          // the projection diverges from the truth.
 
-          const canvas = document.getElementById('demo-embed-canvas');
-          const ctx = canvas.getContext('2d');
-          const selA = document.getElementById('demo-embed-a');
-          const selB = document.getElementById('demo-embed-b');
-          const statsEl = document.getElementById('demo-embed-stats');
+          const canvas    = document.getElementById('demo-embed-canvas');
+          const ctx       = canvas.getContext('2d');
+          const selA      = document.getElementById('demo-embed-a');
+          const selB      = document.getElementById('demo-embed-b');
+          const statsEl   = document.getElementById('demo-embed-stats');
+          const hoverEl   = document.getElementById('demo-embed-hover');
 
-          let PAIRS = null;
+          let PAIRS    = null;   // [{id, text, idx, x, y}]
+          let VECTORS  = null;   // [unit_idx][dim_idx], unit-normalized
+          let hoveredI = -1;     // index into PAIRS for hover highlight
 
-          function dist(a, b) {
-            // Euclidean distance in the projected 2D space — a stand-in for the
-            // cosine distance the model actually computes in 384D. The relationship
-            // is monotonic for nearby points; the next demo shows where it breaks.
-            const dx = a.x - b.x, dy = a.y - b.y;
-            return Math.sqrt(dx * dx + dy * dy);
+          function cosineDist(idxA, idxB) {
+            const a = VECTORS[idxA];
+            const b = VECTORS[idxB];
+            let dot = 0;
+            for (let i = 0; i < a.length; i++) dot += a[i] * b[i];
+            return 1 - dot;
+          }
+
+          function drawLabel(p, dotX, dotY, W, H) {
+            ctx.font = '11px JetBrains Mono, Menlo, monospace';
+            const textW = ctx.measureText(p.id).width;
+            let lx = dotX + 12;
+            let ly = dotY + 4;
+            if (lx + textW > W - 4) lx = dotX - textW - 8;
+            if (ly < 12)            ly = dotY + 16;
+            if (ly > H - 4)         ly = dotY - 8;
+            ctx.fillStyle = '#000';
+            ctx.fillText(p.id, lx, ly);
           }
 
           function render() {
             if (!PAIRS) return;
             const W = canvas.width, H = canvas.height;
             ctx.clearRect(0, 0, W, H);
-            ctx.fillStyle = 'rgba(0,0,0,0.18)';
+            // Background: all 103 units faintly — the cloud
+            ctx.fillStyle = 'rgba(0,0,0,0.22)';
             PAIRS.forEach(p => {
               ctx.beginPath();
-              ctx.arc(p.x * W, p.y * H, 3, 0, Math.PI * 2);
+              ctx.arc(p.x * W, p.y * H, 2.4, 0, Math.PI * 2);
               ctx.fill();
             });
+            // Hover ring (ink, hairline) — drawn UNDER the selected pair so
+            // selection always wins.
+            if (hoveredI >= 0) {
+              const h = PAIRS[hoveredI];
+              ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.arc(h.x * W, h.y * H, 7, 0, Math.PI * 2);
+              ctx.stroke();
+            }
             const a = PAIRS[+selA.value];
             const b = PAIRS[+selB.value];
             if (!a || !b) return;
+            // Connecting line
             ctx.strokeStyle = 'rgba(255,20,147,0.5)';
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(a.x * W, a.y * H);
             ctx.lineTo(b.x * W, b.y * H);
             ctx.stroke();
-            [a, b].forEach((p) => {
+            // Selected pair
+            [a, b].forEach(p => {
+              const dotX = p.x * W, dotY = p.y * H;
               ctx.fillStyle = '#ff1493';
               ctx.beginPath();
-              ctx.arc(p.x * W, p.y * H, 7, 0, Math.PI * 2);
+              ctx.arc(dotX, dotY, 6.5, 0, Math.PI * 2);
               ctx.fill();
-              ctx.fillStyle = '#000';
-              ctx.font = '11px JetBrains Mono, Menlo, monospace';
-              ctx.fillText(p.id, p.x * W + 12, p.y * H + 4);
+              drawLabel(p, dotX, dotY, W, H);
             });
-            const d = dist(a, b);
-            statsEl.innerHTML = `<strong>${a.id}</strong> ↔ <strong>${b.id}</strong> · projected distance ${d.toFixed(3)}`;
+            const d = cosineDist(a.idx, b.idx);
+            statsEl.innerHTML = `<strong>${a.id}</strong> ↔ <strong>${b.id}</strong> · cosine distance ${d.toFixed(3)}`;
           }
+
+          // Mouse → nearest dot in screen pixels. Threshold ~14px so labels
+          // don't trigger on stray motion.
+          function findNearest(mx, my) {
+            const W = canvas.width, H = canvas.height;
+            let bestI = -1;
+            let bestD = 14 * 14;
+            for (let i = 0; i < PAIRS.length; i++) {
+              const dx = PAIRS[i].x * W - mx;
+              const dy = PAIRS[i].y * H - my;
+              const d = dx * dx + dy * dy;
+              if (d < bestD) { bestD = d; bestI = i; }
+            }
+            return bestI;
+          }
+
+          function escapeHtml(s) {
+            return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+          }
+
+          canvas.addEventListener('mousemove', (e) => {
+            if (!PAIRS) return;
+            const rect = canvas.getBoundingClientRect();
+            const mx = (e.clientX - rect.left) * (canvas.width  / rect.width);
+            const my = (e.clientY - rect.top)  * (canvas.height / rect.height);
+            const i = findNearest(mx, my);
+            if (i !== hoveredI) {
+              hoveredI = i;
+              if (i < 0) {
+                hoverEl.innerHTML = '';
+              } else {
+                const p = PAIRS[i];
+                hoverEl.innerHTML = `<strong>${p.id}</strong> ${escapeHtml(p.text)}`;
+              }
+              render();
+            }
+          });
+          canvas.addEventListener('mouseleave', () => {
+            if (hoveredI !== -1) {
+              hoveredI = -1;
+              hoverEl.innerHTML = '';
+              render();
+            }
+          });
 
           Promise.all([
             fetch('../data/embeddings.json').then(r => r.json()),
             fetch('../data/manifesto-units.json').then(r => r.json())
           ]).then(([embeds, units]) => {
-            const idToIndex = {};
-            embeds.unit_ids_in_order.forEach((id, i) => { idToIndex[id] = i; });
             const idToText = {};
             units.units.forEach(u => { idToText[u.id] = u.text; });
             const layout0 = embeds.layouts['0'];
+            VECTORS = embeds.vectors;
 
-            PAIRS = CURATED_IDS.map(id => {
-              const idx = idToIndex[id];
+            if (!VECTORS) {
+              statsEl.textContent = 'embeddings.json missing `vectors` field — re-run build.py with the Q12 patch.';
+              return;
+            }
+
+            // PAIRS in the order embeddings.unit_ids_in_order uses, so .idx
+            // maps directly into VECTORS for cosine lookup.
+            PAIRS = embeds.unit_ids_in_order.map((id, idx) => {
               const text = idToText[id];
-              if (idx === undefined || !text) return null;
-              return { id, text, x: layout0[idx][0], y: layout0[idx][1] };
+              if (!text) return null;
+              return { id, text, idx, x: layout0[idx][0], y: layout0[idx][1] };
             }).filter(Boolean);
 
+            // Populate dropdowns — all 103, text truncated at 80 chars.
             PAIRS.forEach((p, i) => {
-              const trim = p.text.length > 50 ? p.text.slice(0, 50) + '…' : p.text;
+              const trim = p.text.length > 80 ? p.text.slice(0, 80) + '…' : p.text;
               const opt = document.createElement('option');
               opt.value = i;
               opt.textContent = `${p.id} — ${trim}`;
               selA.appendChild(opt.cloneNode(true));
               selB.appendChild(opt);
             });
-            // Default selections: first and last in curated list — distant pair
-            selA.value = 1;
-            selB.value = 7;
+
+            // Contrastive default: u014 ("Pink is what's missing.") vs u005
+            // ("Red teaming is episodic and adversarial…").
+            const idxOf = id => PAIRS.findIndex(p => p.id === id);
+            const defA = idxOf('u014');
+            const defB = idxOf('u005');
+            selA.value = defA >= 0 ? defA : 0;
+            selB.value = defB >= 0 ? defB : PAIRS.length - 1;
+
             render();
             selA.addEventListener('change', render);
             selB.addEventListener('change', render);

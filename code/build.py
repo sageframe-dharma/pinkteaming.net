@@ -492,15 +492,23 @@ def main():
             coords = project_umap(embeddings, seed)
             layouts[str(seed)] = [[round(float(x), 4), round(float(y), 4)] for x, y in coords]
 
+        # Vectors are L2-normalized (per embed_units), so cosine similarity
+        # in the browser simplifies to a dot product. 4-decimal precision is
+        # plenty for visual cosine display; cuts ~30% off file size vs 5dp.
+        vectors = [[round(float(v), 4) for v in vec] for vec in embeddings]
+
         embeddings_data = {
             "model": EMBEDDING_MODEL,
             "umap_params": UMAP_PARAMS,
             "seeds": UMAP_SEEDS,
             "unit_ids_in_order": [u["id"] for u in units],
+            "vectors": vectors,
             "layouts": layouts,
         }
+        # No indent — embeddings.json is data, not human-edited. With 103 × 384
+        # vector rows, indent=2 nearly doubles the file size for no gain.
         embeddings_path.write_text(
-            json.dumps(embeddings_data, indent=2),
+            json.dumps(embeddings_data, separators=(",", ":")),
             encoding="utf-8",
         )
         print(f"  ✓ Wrote {embeddings_path.name}")
