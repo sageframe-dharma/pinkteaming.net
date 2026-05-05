@@ -9,6 +9,178 @@
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../nav.css">
 <script src="../nav.js" defer></script>
+<script>
+/* ────────────────────────────────────────────────────────────
+   Shared "deep-glyph" renderer — the candlestick visual the
+   apparatus (door page) uses for each manifesto-unit dot in
+   the deep zone. Lifted from site/index.html drawCandlestick()
+   so the demos in this page read as the same visual language.
+   ──────────────────────────────────────────────────────────── */
+window.deepGlyph = (function () {
+  // Stable per-id properties: same unit gets the same candlestick
+  // shape every visit, even across UMAP seed changes.
+  function hashSeed(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    return Math.abs(h) || 1;
+  }
+  function r(seed) {
+    return Math.abs((Math.sin(seed * 12.9898 + 78.233) * 43758.5453) % 1);
+  }
+  function propsFor(id) {
+    const h = hashSeed(id);
+    return {
+      stickLen:    18 + r(h)     * 26,        // 18-44 px (smaller demo canvas)
+      stickJitter: (r(h * 2) - 0.5) * 2,      // -1..1 px tilt
+      tickW:        4 + r(h * 3) *  4,        // 4-8 px bottom tick
+      glowR:       12 + r(h * 4) *  8         // 12-20 px halo
+    };
+  }
+
+  function drawHaze(ctx, p) {
+    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.glowR);
+    g.addColorStop(0, 'rgba(0,0,0,0.06)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.save();
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.glowR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawGlow(ctx, p, pulse) {
+    const flash = pulse || 0;
+    const gR = p.glowR * 1.04 * (1 + 0.15 * flash);
+    const inner = 0.25 + 0.06 * flash;
+    const mid   = 0.08 + 0.04 * flash;
+    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, gR);
+    g.addColorStop(0,    `rgba(255,20,147,${inner.toFixed(3)})`);
+    g.addColorStop(0.55, `rgba(255,20,147,${mid.toFixed(3)})`);
+    g.addColorStop(1,     'rgba(255,20,147,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, gR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawStick(ctx, p, active, pulse) {
+    const flash = pulse || 0;
+    const headR  = (active ? 4.0 : 2.0) * (active ? 1 + 0.06 * flash : 1);
+    const stickW = active ? 2.0 : 1.2;
+    const len    = p.stickLen * (active ? 1 + 0.08 * flash : 1);
+    const x = p.x, y = p.y;
+    const xb = x + p.stickJitter;
+    const yb = y + len;
+
+    const grad = ctx.createLinearGradient(x, y, xb, yb);
+    if (active) {
+      grad.addColorStop(0, 'rgba(255,20,147,0.95)');
+      grad.addColorStop(1, 'rgba(255,20,147,0.10)');
+    } else {
+      grad.addColorStop(0, 'rgba(0,0,0,0.55)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.08)');
+    }
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = stickW;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(xb, yb);
+    ctx.stroke();
+
+    const halfTick = (active ? p.tickW : p.tickW * 0.7) / 2;
+    ctx.strokeStyle = active ? 'rgba(255,20,147,0.45)' : 'rgba(0,0,0,0.18)';
+    ctx.lineWidth = active ? 1.2 : 0.9;
+    ctx.beginPath();
+    ctx.moveTo(xb - halfTick, yb);
+    ctx.lineTo(xb + halfTick, yb);
+    ctx.stroke();
+
+    if (active) {
+      const m = flash * 0.12;
+      const G = Math.round(20  + (255 - 20)  * m);
+      const B = Math.round(147 + (255 - 147) * m);
+      ctx.fillStyle = `rgba(255,${G},${B},1)`;
+    } else {
+      ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    }
+    ctx.beginPath();
+    ctx.arc(x, y, headR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // ── Drift / sway ─────────────────────────────────────────
+  // Lifted from the apparatus's tickCurrents: each point's displacement
+  // (dx, dy) drifts via a 3D-noise current pulled back by a soft spring.
+  // Result is the same ambient sway you see on the door page's deep zone.
+  function _noiseHash(ix, iy, iz) {
+    let h = (ix * 374761393) ^ (iy * 668265263) ^ (iz * 2147483647);
+    h = (h ^ (h >>> 13)) * 1274126177;
+    h = (h ^ (h >>> 16)) >>> 0;
+    return h / 4294967295;
+  }
+  function _smooth(t) { return t * t * (3 - 2 * t); }
+  function noise3(x, y, z) {
+    const x0 = Math.floor(x), y0 = Math.floor(y), z0 = Math.floor(z);
+    const xf = x - x0, yf = y - y0, zf = z - z0;
+    const u = _smooth(xf), v = _smooth(yf), w = _smooth(zf);
+    const c000 = _noiseHash(x0,     y0,     z0);
+    const c100 = _noiseHash(x0 + 1, y0,     z0);
+    const c010 = _noiseHash(x0,     y0 + 1, z0);
+    const c110 = _noiseHash(x0 + 1, y0 + 1, z0);
+    const c001 = _noiseHash(x0,     y0,     z0 + 1);
+    const c101 = _noiseHash(x0 + 1, y0,     z0 + 1);
+    const c011 = _noiseHash(x0,     y0 + 1, z0 + 1);
+    const c111 = _noiseHash(x0 + 1, y0 + 1, z0 + 1);
+    const a = c000 + (c100 - c000) * u;
+    const b = c010 + (c110 - c010) * u;
+    const c = c001 + (c101 - c001) * u;
+    const d = c011 + (c111 - c011) * u;
+    const e = a + (b - a) * v;
+    const f = c + (d - c) * v;
+    return (e + (f - e) * w) * 2 - 1;   // → [-1, 1]
+  }
+
+  // Drift parameters tuned for the demo canvas (smaller than the apparatus's
+  // deep zone, so velocity and max excursion are scaled down).
+  const NOISE_SCALE  = 1 / 140;
+  const NOISE_OFFSET = 137.31;
+  const CURRENT_VEL  = 1.0;
+  const SPRING_K     = 0.006;
+  const DAMP         = 0.92;
+  const MAX_DRIFT    = 20;
+
+  let _noiseZ = 0;
+  function tickFrame(dt) {
+    const fScale = Math.min(3, dt * 60);
+    _noiseZ += 0.0003 * fScale;
+  }
+  // Mutates p.dx, p.dy, p.vx, p.vy (lazily initialised on first call).
+  // restX / restY are pixel coordinates of the point's rest position.
+  function applyDrift(p, restX, restY, dt) {
+    if (p.dx === undefined) { p.dx = 0; p.dy = 0; p.vx = 0; p.vy = 0; }
+    const fScale = Math.min(3, dt * 60);
+    const nx = noise3(restX * NOISE_SCALE,                 restY * NOISE_SCALE,                 _noiseZ);
+    const ny = noise3(restX * NOISE_SCALE + NOISE_OFFSET,  restY * NOISE_SCALE + NOISE_OFFSET,  _noiseZ);
+    const ax = nx * CURRENT_VEL;
+    const ay = ny * CURRENT_VEL;
+    p.vx = (p.vx + ax * fScale) * Math.pow(DAMP, fScale) - p.dx * SPRING_K * fScale;
+    p.vy = (p.vy + ay * fScale) * Math.pow(DAMP, fScale) - p.dy * SPRING_K * fScale;
+    p.dx += p.vx;
+    p.dy += p.vy;
+    const m = Math.hypot(p.dx, p.dy);
+    if (m > MAX_DRIFT) {
+      const s = MAX_DRIFT / m;
+      p.dx *= s;
+      p.dy *= s;
+    }
+  }
+
+  return { propsFor, drawHaze, drawGlow, drawStick, tickFrame, applyDrift };
+})();
+</script>
 <style>
 /* ════════════════════════════════════════════════════════════
    PINK TEAMING — READING page · how the page reads itself
@@ -758,68 +930,125 @@ clamped to [2.0, 7.0]</code></pre>
           function drawLabel(p, dotX, dotY, W, H) {
             ctx.font = '11px JetBrains Mono, Menlo, monospace';
             const textW = ctx.measureText(p.id).width;
-            let lx = dotX + 12;
-            let ly = dotY + 4;
+            // Position label above-right of head, clamped to canvas bounds.
+            let lx = dotX + 8;
+            let ly = dotY - 6;
             if (lx + textW > W - 4) lx = dotX - textW - 8;
-            if (ly < 12)            ly = dotY + 16;
-            if (ly > H - 4)         ly = dotY - 8;
-            ctx.fillStyle = '#000';
+            if (ly < 12)            ly = dotY + 14;
+            ctx.fillStyle = 'rgba(0,0,0,0.85)';
             ctx.fillText(p.id, lx, ly);
+          }
+
+          // Effective head position = rest + drift. Used for both render
+          // and hit-testing so hover lands on the dot you actually see.
+          function effPos(p, W, H) {
+            return {
+              x: p.x * W + (p.dx || 0),
+              y: p.y * H + (p.dy || 0)
+            };
+          }
+
+          // Build a render-coords copy carrying the candlestick props.
+          function toPx(p, W, H) {
+            const e = effPos(p, W, H);
+            return {
+              id: p.id,
+              x: e.x, y: e.y,
+              stickLen: p.stickLen, stickJitter: p.stickJitter,
+              tickW: p.tickW, glowR: p.glowR
+            };
           }
 
           function render() {
             if (!PAIRS) return;
             const W = canvas.width, H = canvas.height;
             ctx.clearRect(0, 0, W, H);
-            // Background: all 103 units faintly — the cloud
-            ctx.fillStyle = 'rgba(0,0,0,0.22)';
-            PAIRS.forEach(p => {
-              ctx.beginPath();
-              ctx.arc(p.x * W, p.y * H, 2.4, 0, Math.PI * 2);
-              ctx.fill();
+            const aIdx = +selA.value, bIdx = +selB.value;
+
+            // Pass 1 — atmospheric haze on inactive points.
+            PAIRS.forEach((p, i) => {
+              if (i === aIdx || i === bIdx) return;
+              window.deepGlyph.drawHaze(ctx, toPx(p, W, H));
             });
-            // Hover ring (ink, hairline) — drawn UNDER the selected pair so
-            // selection always wins.
-            if (hoveredI >= 0) {
+
+            // Pass 2 — inactive candlesticks (ink stems).
+            PAIRS.forEach((p, i) => {
+              if (i === aIdx || i === bIdx) return;
+              window.deepGlyph.drawStick(ctx, toPx(p, W, H), false, 0);
+            });
+
+            // Pass 3 — connecting line between selected heads (drawn under
+            // active glyphs so heads cap it cleanly). Uses displaced positions.
+            const a = PAIRS[aIdx], b = PAIRS[bIdx];
+            if (a && b) {
+              const ae = effPos(a, W, H), be = effPos(b, W, H);
+              ctx.strokeStyle = 'rgba(255,20,147,0.55)';
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.moveTo(ae.x, ae.y);
+              ctx.lineTo(be.x, be.y);
+              ctx.stroke();
+            }
+
+            // Pass 4 — hover ring under selected pair.
+            if (hoveredI >= 0 && hoveredI !== aIdx && hoveredI !== bIdx) {
               const h = PAIRS[hoveredI];
+              const he = effPos(h, W, H);
               ctx.strokeStyle = 'rgba(0,0,0,0.7)';
               ctx.lineWidth = 1;
               ctx.beginPath();
-              ctx.arc(h.x * W, h.y * H, 7, 0, Math.PI * 2);
+              ctx.arc(he.x, he.y, 9, 0, Math.PI * 2);
               ctx.stroke();
             }
-            const a = PAIRS[+selA.value];
-            const b = PAIRS[+selB.value];
-            if (!a || !b) return;
-            // Connecting line
-            ctx.strokeStyle = 'rgba(255,20,147,0.5)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(a.x * W, a.y * H);
-            ctx.lineTo(b.x * W, b.y * H);
-            ctx.stroke();
-            // Selected pair
-            [a, b].forEach(p => {
-              const dotX = p.x * W, dotY = p.y * H;
-              ctx.fillStyle = '#ff1493';
-              ctx.beginPath();
-              ctx.arc(dotX, dotY, 6.5, 0, Math.PI * 2);
-              ctx.fill();
-              drawLabel(p, dotX, dotY, W, H);
-            });
-            const d = cosineDist(a.idx, b.idx);
-            statsEl.innerHTML = `<strong>${a.id}</strong> ↔ <strong>${b.id}</strong> · cosine distance ${d.toFixed(3)}`;
+
+            // Pass 5 — selected pair: pink glow halo + active candlestick.
+            if (a && b) {
+              [a, b].forEach(p => {
+                const px = toPx(p, W, H);
+                window.deepGlyph.drawGlow(ctx, px, 0);
+                window.deepGlyph.drawStick(ctx, px, true, 0);
+                drawLabel(p, px.x, px.y, W, H);
+              });
+              const d = cosineDist(a.idx, b.idx);
+              statsEl.innerHTML = `<strong>${a.id}</strong> ↔ <strong>${b.id}</strong> · cosine distance ${d.toFixed(3)}`;
+            }
           }
 
-          // Mouse → nearest dot in screen pixels. Threshold ~14px so labels
-          // don't trigger on stray motion.
+          // Continuous animation loop — drift on every frame, redraw.
+          // Pause/resume API exposed for IntersectionObserver throttling.
+          let raf = null;
+          let lastTs = performance.now();
+          function frame(now) {
+            const dt = Math.min(0.1, (now - lastTs) / 1000);
+            lastTs = now;
+            if (PAIRS) {
+              const W = canvas.width, H = canvas.height;
+              window.deepGlyph.tickFrame(dt);
+              for (const p of PAIRS) {
+                window.deepGlyph.applyDrift(p, p.x * W, p.y * H, dt);
+              }
+              render();
+            }
+            raf = requestAnimationFrame(frame);
+          }
+          window.__demoEmbedding = {
+            pause:  () => { if (raf) { cancelAnimationFrame(raf); raf = null; } },
+            resume: () => {
+              if (raf) return;
+              lastTs = performance.now();
+              raf = requestAnimationFrame(frame);
+            }
+          };
+
+          // Mouse → nearest dot using DISPLACED positions (so hover hits the
+          // dot you can see, not the rest position underneath).
           function findNearest(mx, my) {
             const W = canvas.width, H = canvas.height;
             let bestI = -1;
             let bestD = 14 * 14;
             for (let i = 0; i < PAIRS.length; i++) {
-              const dx = PAIRS[i].x * W - mx;
-              const dy = PAIRS[i].y * H - my;
+              const e = effPos(PAIRS[i], W, H);
+              const dx = e.x - mx, dy = e.y - my;
               const d = dx * dx + dy * dy;
               if (d < bestD) { bestD = d; bestI = i; }
             }
@@ -870,11 +1099,17 @@ clamped to [2.0, 7.0]</code></pre>
             }
 
             // PAIRS in the order embeddings.unit_ids_in_order uses, so .idx
-            // maps directly into VECTORS for cosine lookup.
+            // maps directly into VECTORS for cosine lookup. Candlestick props
+            // are stable per-id (same shape every visit).
             PAIRS = embeds.unit_ids_in_order.map((id, idx) => {
               const text = idToText[id];
               if (!text) return null;
-              return { id, text, idx, x: layout0[idx][0], y: layout0[idx][1] };
+              const props = window.deepGlyph.propsFor(id);
+              return {
+                id, text, idx,
+                x: layout0[idx][0], y: layout0[idx][1],
+                ...props
+              };
             }).filter(Boolean);
 
             // Populate dropdowns — all 103, text truncated at 80 chars.
@@ -895,9 +1130,12 @@ clamped to [2.0, 7.0]</code></pre>
             selA.value = defA >= 0 ? defA : 0;
             selB.value = defB >= 0 ? defB : PAIRS.length - 1;
 
+            // Selection changes are picked up automatically by the next
+            // frame, but render once now so the page isn't blank for the
+            // first ~16ms after data loads.
             render();
-            selA.addEventListener('change', render);
-            selB.addEventListener('change', render);
+            // Continuous loop drives drift + redraw.
+            raf = requestAnimationFrame(frame);
           }).catch(err => {
             statsEl.textContent = 'Failed to load embedding data.';
             console.error('demo-embedding load:', err);
@@ -947,55 +1185,110 @@ clamped to [2.0, 7.0]</code></pre>
           const statsEl = document.getElementById('demo-umap-stats');
 
           let LAYOUTS = null;     // [seed][i] = [x, y]
+          let PROPS   = null;     // candlestick props + drift state per curated unit
           let mostInvariantIdx = -1;
           let mostUnstableIdx = -1;
           let currentSeed = 0;
           let targetSeed = 0;
-          let interpAmt = 1;
+          let interpAmt = 1;       // 0..1 between currentSeed and targetSeed
           let raf = null;
 
+          // Rest position (pixel coords) of unit i at the current interpolation.
+          function restPx(i, W, H, from, to) {
+            const x = from[i][0] * (1 - interpAmt) + to[i][0] * interpAmt;
+            const y = from[i][1] * (1 - interpAmt) + to[i][1] * interpAmt;
+            return { x: x * W, y: y * H };
+          }
+
+          // Build a PX point for unit i: rest + drift, plus candlestick props.
+          function pointAt(i, W, H, from, to) {
+            const rest = restPx(i, W, H, from, to);
+            return {
+              x: rest.x + (PROPS[i].dx || 0),
+              y: rest.y + (PROPS[i].dy || 0),
+              stickLen:    PROPS[i].stickLen,
+              stickJitter: PROPS[i].stickJitter,
+              tickW:       PROPS[i].tickW,
+              glowR:       PROPS[i].glowR
+            };
+          }
+
           function render() {
-            if (!LAYOUTS) return;
+            if (!LAYOUTS || !PROPS) return;
             const W = canvas.width, H = canvas.height;
             ctx.clearRect(0, 0, W, H);
             const from = LAYOUTS[currentSeed];
-            const to = LAYOUTS[targetSeed];
-            CURATED_IDS.forEach((u, i) => {
-              const x = from[i][0] * (1 - interpAmt) + to[i][0] * interpAmt;
-              const y = from[i][1] * (1 - interpAmt) + to[i][1] * interpAmt;
-              const isInvariant = i === mostInvariantIdx;
-              const isUnstable = i === mostUnstableIdx;
-              ctx.fillStyle = isInvariant
-                ? 'rgba(255,20,147,0.9)'
-                : isUnstable
-                  ? 'rgba(0,0,0,0.9)'
-                  : 'rgba(0,0,0,0.35)';
-              ctx.beginPath();
-              ctx.arc(x * W, y * H, isInvariant || isUnstable ? 5 : 3, 0, Math.PI * 2);
-              ctx.fill();
-              if (isInvariant) {
-                ctx.fillStyle = 'rgba(255,20,147,1)';
-                ctx.font = '10px JetBrains Mono, Menlo, monospace';
-                ctx.fillText('invariant', x * W + 8, y * H - 4);
-              }
-              if (isUnstable) {
-                ctx.fillStyle = 'rgba(0,0,0,0.7)';
-                ctx.font = '10px JetBrains Mono, Menlo, monospace';
-                ctx.fillText('unstable', x * W + 8, y * H - 4);
-              }
-            });
-          }
+            const to   = LAYOUTS[targetSeed];
 
-          function animate() {
-            if (interpAmt < 1) {
-              interpAmt = Math.min(1, interpAmt + 0.06);
-              render();
-              raf = requestAnimationFrame(animate);
-            } else {
-              currentSeed = targetSeed;
-              raf = null;
+            // Pass 1 — haze on all non-invariant, non-unstable points.
+            CURATED_IDS.forEach((_, i) => {
+              if (i === mostInvariantIdx) return;
+              window.deepGlyph.drawHaze(ctx, pointAt(i, W, H, from, to));
+            });
+
+            // Pass 2 — inactive candlesticks (ink) for the rest, including
+            // the unstable point. The label distinguishes it.
+            CURATED_IDS.forEach((_, i) => {
+              if (i === mostInvariantIdx) return;
+              window.deepGlyph.drawStick(ctx, pointAt(i, W, H, from, to), false, 0);
+            });
+
+            // Pass 3 — invariant point: pink glow + active candlestick.
+            if (mostInvariantIdx >= 0) {
+              const px = pointAt(mostInvariantIdx, W, H, from, to);
+              window.deepGlyph.drawGlow(ctx, px, 0);
+              window.deepGlyph.drawStick(ctx, px, true, 0);
+            }
+
+            // Pass 4 — labels for invariant + unstable.
+            ctx.font = '10px JetBrains Mono, Menlo, monospace';
+            if (mostInvariantIdx >= 0) {
+              const px = pointAt(mostInvariantIdx, W, H, from, to);
+              ctx.fillStyle = 'rgba(255,20,147,1)';
+              ctx.fillText('invariant', px.x + 8, px.y - 6);
+            }
+            if (mostUnstableIdx >= 0) {
+              const px = pointAt(mostUnstableIdx, W, H, from, to);
+              ctx.fillStyle = 'rgba(0,0,0,0.7)';
+              ctx.fillText('unstable', px.x + 8, px.y - 6);
             }
           }
+
+          // Continuous animation loop — drift on every frame; seed-swap
+          // interpolation also advances here. Pause/resume API is exposed
+          // for IntersectionObserver throttling.
+          let lastTs = performance.now();
+          function frame(now) {
+            const dt = Math.min(0.1, (now - lastTs) / 1000);
+            lastTs = now;
+            if (LAYOUTS && PROPS) {
+              const W = canvas.width, H = canvas.height;
+              const from = LAYOUTS[currentSeed];
+              const to   = LAYOUTS[targetSeed];
+              // Advance seed interpolation toward target.
+              if (interpAmt < 1) {
+                interpAmt = Math.min(1, interpAmt + 0.06);
+                if (interpAmt >= 1) currentSeed = targetSeed;
+              }
+              // Drift: noise current pulled back by spring, around the
+              // (currently interpolating) rest position.
+              window.deepGlyph.tickFrame(dt);
+              for (let i = 0; i < PROPS.length; i++) {
+                const r = restPx(i, W, H, from, to);
+                window.deepGlyph.applyDrift(PROPS[i], r.x, r.y, dt);
+              }
+              render();
+            }
+            raf = requestAnimationFrame(frame);
+          }
+          window.__demoUmap = {
+            pause:  () => { if (raf) { cancelAnimationFrame(raf); raf = null; } },
+            resume: () => {
+              if (raf) return;
+              lastTs = performance.now();
+              raf = requestAnimationFrame(frame);
+            }
+          };
 
           fetch('../data/embeddings.json').then(r => r.json()).then(embeds => {
             const idToIndex = {};
@@ -1008,6 +1301,9 @@ clamped to [2.0, 7.0]</code></pre>
                 return embeds.layouts[String(seed)][idx];
               })
             );
+
+            // Stable candlestick props per curated unit (id-derived).
+            PROPS = CURATED_IDS.map(id => window.deepGlyph.propsFor(id));
 
             // Compute per-unit variance across all 8 seeds (sum of x and y variance).
             const variance = CURATED_IDS.map((_, i) => {
@@ -1024,17 +1320,22 @@ clamped to [2.0, 7.0]</code></pre>
               const newSeed = +slider.value;
               seedLabel.textContent = newSeed;
               if (newSeed !== targetSeed) {
+                // Snap currentSeed to whatever rest position is being shown
+                // right now, then start a fresh interpolation toward the new
+                // target. The continuous frame loop picks this up on the next
+                // tick — no need to start animation manually.
                 currentSeed = targetSeed;
                 targetSeed = newSeed;
                 interpAmt = 0;
-                if (raf) cancelAnimationFrame(raf);
-                animate();
               }
               statsEl.innerHTML = `seed ${newSeed} · pink point: stays put across all 8 seeds (real neighborhood) · black-labeled point: wanders the most (projection artifact)`;
             });
 
-            render();
             statsEl.innerHTML = `seed 0 · pink point: stays put across all 8 seeds (real neighborhood) · black-labeled point: wanders the most (projection artifact)`;
+            // Kick off the continuous loop. Drift starts immediately; the
+            // candlesticks begin sway-and-drift even before the first slider input.
+            lastTs = performance.now();
+            raf = requestAnimationFrame(frame);
           }).catch(err => {
             statsEl.textContent = 'Failed to load layouts.';
             console.error('demo-umap load:', err);
@@ -1200,22 +1501,39 @@ clamped to [2.0, 7.0]</code></pre>
         </div>
         <script>
         (function () {
+          // The 20 actual keyword triggers used by the apparatus (from the
+          // build pipeline's resonance-sources.json), with their real % of
+          // 103 manifesto units. Plus 4 noise demonstrators (model, AI,
+          // the, is) at intermediate / saturating frequencies — kept togglable
+          // so the failure modes of saturation + pure noise are visceral.
           const KEYWORDS = [
-            { word: "model",         pct: 22, included: false }, // saturating — left out on purpose
+            // Real triggers — already calibrated for signal
             { word: "pattern",       pct:  5, included: true  },
             { word: "encounter",     pct:  5, included: true  },
             { word: "ambiguity",     pct:  4, included: true  },
-            { word: "AI",            pct:  8, included: false }, // also too frequent
-            { word: "territory",     pct:  1, included: true  },
-            { word: "interiority",   pct:  1, included: true  },
-            { word: "durational",    pct:  1, included: true  },
-            { word: "participatory", pct:  1, included: true  },
-            { word: "consumptive",   pct:  1, included: true  },
-            { word: "the",           pct: 95, included: false }, // pure noise demonstrator
-            { word: "is",            pct: 80, included: false }, // pure noise demonstrator
             { word: "door",          pct:  3, included: true  },
+            { word: "adversarial",   pct:  2, included: true  },
+            { word: "decorative",    pct:  2, included: true  },
+            { word: "longitudinal",  pct:  2, included: true  },
+            { word: "profit",        pct:  2, included: true  },
+            { word: "territory",     pct:  1, included: true  },
+            { word: "map",           pct:  1, included: true  },
+            { word: "interiority",   pct:  1, included: true  },
+            { word: "consumptive",   pct:  1, included: true  },
+            { word: "participatory", pct:  1, included: true  },
+            { word: "clinics",       pct:  1, included: true  },
+            { word: "courtrooms",    pct:  1, included: true  },
+            { word: "classrooms",    pct:  1, included: true  },
+            { word: "extracted",     pct:  1, included: true  },
+            { word: "durational",    pct:  1, included: true  },
             { word: "welcome",       pct:  1, included: true  },
-            { word: "profit",        pct:  2, included: true  }
+            { word: "closing",       pct:  1, included: true  },
+            // Demonstrators — togglable but off by default. Show what the
+            // page deliberately excluded and why.
+            { word: "model",         pct: 22, included: false }, // saturating
+            { word: "AI",            pct:  8, included: false }, // saturating-ish
+            { word: "the",           pct: 95, included: false }, // pure noise
+            { word: "is",            pct: 80, included: false }  // pure noise
           ];
           const canvas   = document.getElementById('demo-kw-canvas');
           const ctx      = canvas.getContext('2d');
@@ -1233,6 +1551,13 @@ clamped to [2.0, 7.0]</code></pre>
           let nextSpawn = 0.5;
           let raf = null;
 
+          // Flare lifetime — long enough for the eye to track one flare's
+          // full lifecycle (spawn, ripple outward, fade). The apparatus's
+          // sky uses 2.5s because the active line is moving every ~3-7s and
+          // each flare needs to fade before the next sentence; this demo
+          // doesn't have that constraint, so we breathe.
+          const FLARE_DURATION = 4.0;
+
           function activeRate() {
             return KEYWORDS.filter(k => k.included).reduce((acc, k) => acc + k.pct, 0);
           }
@@ -1240,12 +1565,19 @@ clamped to [2.0, 7.0]</code></pre>
             const rate = activeRate();
             if (rate === 0) return;
             flares.push({ x: Math.random() * W, y: Math.random() * H, bornAt: t });
-            nextSpawn = t + Math.max(0.05, 1.5 - rate * 0.013);
+            // Interval has a real-world reading: each "tick" of demo time
+            // corresponds to roughly one manifesto unit being read, and a
+            // keyword's pct is the probability the current unit contains it.
+            // Flares per second ≈ rate × 0.034 (units/s × pct/100). Floor at
+            // 0.1s so noise stays blurred; ceiling at 30s so a single rare
+            // keyword still fires at least once during a typical demo dwell.
+            const flaresPerSec = Math.max(0.034, rate * 0.034);
+            nextSpawn = t + Math.max(0.1, Math.min(30, 1 / flaresPerSec));
           }
           function draw() {
             const t = (performance.now() - t0) / 1000;
             if (t > nextSpawn) spawnFlare(t);
-            flares = flares.filter(f => t - f.bornAt < 2.5);
+            flares = flares.filter(f => t - f.bornAt < FLARE_DURATION);
             const k = (2 * Math.PI) / 36;
             const spd = 60;
             const data = buf.data;
@@ -1255,7 +1587,7 @@ clamped to [2.0, 7.0]</code></pre>
                 const px = x * CELL, py = y * CELL;
                 for (const f of flares) {
                   const age = t - f.bornAt;
-                  const env = Math.max(0, 1 - age / 2.5);
+                  const env = Math.max(0, 1 - age / FLARE_DURATION);
                   const dx = px - f.x, dy = py - f.y;
                   const d = Math.sqrt(dx * dx + dy * dy);
                   if (d > age * spd * 1.5) continue;
@@ -1300,11 +1632,15 @@ clamped to [2.0, 7.0]</code></pre>
           function updateStats() {
             const n = KEYWORDS.filter(k => k.included).length;
             const rate = activeRate();
+            // Thresholds tuned for the new 24-chip set:
+            // - 20 actual triggers sum to ~37% → calibrated
+            // - +AI/model demonstrators → saturating
+            // - +the/is → noise (any one of those alone is also noise)
             let verdict;
-            if (rate < 3)       verdict = "silent—no signal";
-            else if (rate < 25) verdict = "calibrated—meaningful";
-            else if (rate < 60) verdict = "saturating—losing signal";
-            else                verdict = "noise—no signal";
+            if (rate < 5)        verdict = "silent—no signal";
+            else if (rate < 60)  verdict = "calibrated—meaningful";
+            else if (rate < 100) verdict = "saturating—losing signal";
+            else                 verdict = "noise—no signal";
             statsEl.innerHTML = `${n} keywords active · field saturation ${rate}% · <strong>${verdict}</strong>`;
           }
           renderList();
@@ -1431,10 +1767,13 @@ clamped to [2.0, 7.0]</code></pre>
   })();
 
   // Pause continuous-rAF demos when their containing element scrolls offscreen.
-  // Demos 1, 2, 3 are user-driven (only redraw on input) and don't need this.
-  // Demos 4 and 5 expose pause/resume on window.__demoInterference / __demoKeywords.
+  // Demo 1 (segmentation) is user-driven and doesn't need this.
+  // Demos 2, 3, 4, 5 all run continuous loops (drift on 2/3, animation on 4/5)
+  // and expose pause/resume on window.__demoX.
   (function () {
     var targets = [
+      { sel: '#demo-embedding',    api: function () { return window.__demoEmbedding;    } },
+      { sel: '#demo-umap',         api: function () { return window.__demoUmap;         } },
       { sel: '#demo-interference', api: function () { return window.__demoInterference; } },
       { sel: '#demo-keywords',     api: function () { return window.__demoKeywords;     } }
     ];
