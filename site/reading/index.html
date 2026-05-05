@@ -1714,7 +1714,7 @@ clamped to [2.0, 7.0]</code></pre>
             if (t > nextSpawn) spawnFlare(t);
             flares = flares.filter(f => t - f.bornAt < FLARE_DURATION);
             const k = (2 * Math.PI) / 36;
-            const spd = 60;
+            const spd = 22;
             const data = buf.data;
             for (let y = 0; y < bufH; y++) {
               for (let x = 0; x < bufW; x++) {
@@ -1779,13 +1779,14 @@ clamped to [2.0, 7.0]</code></pre>
                 k.included = !k.included;
                 const t = (performance.now() - t0) / 1000;
                 if (k.included) {
-                  // Toggling ON: place a flare with this exact word RIGHT
-                  // NOW, so the click is the demonstration. Add 1–2 extras
-                  // for a higher-frequency word so 'the' immediately reads
-                  // as "this is too much".
-                  placeFlare(t, k.word);
-                  if (k.pct > 50) { placeFlare(t, k.word); placeFlare(t, k.word); }
-                  else if (k.pct > 15) placeFlare(t, k.word);
+                  // Toggling ON: burst N flares of this word RIGHT NOW,
+                  // where N scales with pct so the click viscerally tracks
+                  // the keyword's frequency. pct 5 → 1 flare; pct 22 → 2;
+                  // pct 80 → 8; pct 95 → 10. Click 'the' and the sky
+                  // immediately fills; click 'pattern' and you get one
+                  // quiet ripple.
+                  const burst = Math.max(1, Math.round(k.pct / 10));
+                  for (let n = 0; n < burst; n++) placeFlare(t, k.word);
                 } else {
                   // Toggling OFF: jump any live flares of this word into
                   // their decay phase, so they visibly fade out instead of
