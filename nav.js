@@ -1,7 +1,7 @@
 /* ════════════════════════════════════════════════════════════════
    Nav object — four-armed draggable navigation, shared across all
    pinkteaming.net pages. Auto-mounts on load. Per-page identity is
-   set via <html data-page="door|text|practice|making">.
+   set via <html data-page="door|text|practice|reading">.
 
    Pairs with nav.css. Each page just needs:
      <link rel="stylesheet" href="nav.css">
@@ -12,13 +12,13 @@
     door:     '/',
     text:     '/manifesto',
     practice: '/practice',
-    making:   '/about',
+    reading:  '/about',
   };
 
   const DESTINATIONS = [
     { id: 'door',     label: 'DOOR',     baseAngle: 295, restRank: 0 },
     { id: 'text',     label: 'TEXT',     baseAngle: 30,  restRank: 1 },
-    { id: 'making',   label: 'MAKING',   baseAngle: 220, restRank: 2 },
+    { id: 'reading',  label: 'READING',  baseAngle: 220, restRank: 2 },
     { id: 'practice', label: 'PRACTICE', baseAngle: 130, restRank: 3 },
   ];
   const ANGLE_JITTER = 22;
@@ -36,7 +36,7 @@
     if (path === '' || path === '/index') return 'door';
     if (path.endsWith('/manifesto') || path.endsWith('/text')) return 'text';
     if (path.endsWith('/practice')) return 'practice';
-    if (path.endsWith('/about') || path.endsWith('/making')) return 'making';
+    if (path.endsWith('/about') || path.endsWith('/reading')) return 'reading';
     return 'door';
   }
 
