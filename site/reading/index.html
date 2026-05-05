@@ -1640,11 +1640,30 @@ clamped to [2.0, 7.0]</code></pre>
           let nextSpawn = 0.5;
           let raf = null;
 
-          // Flare lifetime. Long enough that the eye can watch one flare's
-          // full lifecycle (spawn → ripple outward → fade) without the next
-          // one stomping over it. Apparatus uses 2.5s because the active
-          // line moves on every 3-7s; this demo doesn't have that constraint.
-          const FLARE_DURATION = 6.0;
+          // Flare lifetime — 10 seconds so the eye can fully watch each
+          // one's lifecycle. Staged envelope below: 0.4s smoothstep rise,
+          // 0.6s hold at peak, then ~9s slow decay. Plenty of breathing
+          // room between flares at the calibrated configuration.
+          const FLARE_DURATION = 10.0;
+          const FLARE_RISE = 0.4;
+          const FLARE_HOLD = 0.6;
+          const FLARE_DECAY = FLARE_DURATION - FLARE_RISE - FLARE_HOLD;
+
+          // Asymmetric envelope: pop in fast, hold briefly, decay slowly.
+          // Same shape the apparatus's sky uses for its keyword flares —
+          // makes each flare feel like a discrete event rather than a
+          // linear blur.
+          function flareEnv(age) {
+            if (age < 0) return 0;
+            if (age < FLARE_RISE) {
+              const t = age / FLARE_RISE;
+              return t * t * (3 - 2 * t);     // smoothstep up
+            }
+            if (age < FLARE_RISE + FLARE_HOLD) return 1;
+            const t = (age - FLARE_RISE - FLARE_HOLD) / FLARE_DECAY;
+            if (t >= 1) return 0;
+            return 1 - t * t * t;             // cubic ease-out down
+          }
 
           function activeRate() {
             return KEYWORDS.filter(k => k.included).reduce((acc, k) => acc + k.pct, 0);
@@ -1652,19 +1671,26 @@ clamped to [2.0, 7.0]</code></pre>
           function spawnFlare(t) {
             const rate = activeRate();
             if (rate === 0) return;
-            flares.push({ x: Math.random() * W, y: Math.random() * H, bornAt: t });
-            // Spawn rate is anchored to the manifesto's reading: each tick
-            // of demo time ≈ one manifesto unit being read, and a keyword's
-            // pct is the probability the current unit contains it. Then
-            // SCALED DOWN to ~0.25× of that (rate × 0.0085) so each flare
-            // gets room to breathe — at the calibrated configuration
-            // (37%, 20 actual triggers on) you see ~1.5 simultaneous flares
-            // and can track each one. Adding 'the'/'is' overwhelms the field.
-            // Floor 0.05 keeps a single rare keyword (1%) from going years
-            // between fires; ceiling 30s keeps it from auto-firing constantly
-            // when nothing is on.
-            const flaresPerSec = Math.max(0.05, rate * 0.0085);
-            nextSpawn = t + Math.max(0.15, Math.min(30, 1 / flaresPerSec));
+            // Pick a random ACTIVE keyword to attribute this flare to.
+            // The flare is now LITERAL: you see WHICH word fired. Toggle
+            // 'the' on and you'll see "the" plastered everywhere.
+            const actives = KEYWORDS.filter(k => k.included);
+            const word = actives[Math.floor(Math.random() * actives.length)].word;
+            flares.push({
+              x: Math.random() * W,
+              y: Math.random() * H,
+              bornAt: t,
+              word
+            });
+            // Spawn rate is anchored to the manifesto reading rate but
+            // scaled DOWN aggressively (rate × 0.0025) so the calibrated
+            // configuration (37%, 20 actual triggers on) gives ≈1
+            // simultaneous flare with a fresh one every ~10s. Doubling the
+            // rate doubles density. Adding 'the' (95%) creates the strobe.
+            // Floor 0.02 → ceiling 50s; min interval 0.4s so noise is
+            // dense but not literally per-frame.
+            const flaresPerSec = Math.max(0.02, rate * 0.0025);
+            nextSpawn = t + Math.max(0.4, Math.min(50, 1 / flaresPerSec));
           }
           function draw() {
             const t = (performance.now() - t0) / 1000;
@@ -1679,7 +1705,8 @@ clamped to [2.0, 7.0]</code></pre>
                 const px = x * CELL, py = y * CELL;
                 for (const f of flares) {
                   const age = t - f.bornAt;
-                  const env = Math.max(0, 1 - age / FLARE_DURATION);
+                  const env = flareEnv(age);
+                  if (env <= 0) continue;
                   const dx = px - f.x, dy = py - f.y;
                   const d = Math.sqrt(dx * dx + dy * dy);
                   if (d > age * spd * 1.5) continue;
@@ -1703,6 +1730,22 @@ clamped to [2.0, 7.0]</code></pre>
             }
             tmpCtx.putImageData(buf, 0, 0);
             ctx.drawImage(tmp, 0, 0, bufW, bufH, 0, 0, W, H);
+
+            // Overlay: keyword label per flare so the lesson is literal.
+            // Opacity follows the envelope so labels pop in with the flare,
+            // hold while the wave is bright, fade with the decay.
+            ctx.font = "11px 'JetBrains Mono', Menlo, monospace";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "alphabetic";
+            for (const f of flares) {
+              const age = t - f.bornAt;
+              const env = flareEnv(age);
+              if (env <= 0.05) continue;
+              const op = (0.85 * env).toFixed(3);
+              ctx.fillStyle = `rgba(0,0,0,${op})`;
+              ctx.fillText(f.word, f.x, f.y - 14);
+            }
+
             raf = requestAnimationFrame(draw);
           }
           function renderList() {
@@ -1724,14 +1767,15 @@ clamped to [2.0, 7.0]</code></pre>
           function updateStats() {
             const n = KEYWORDS.filter(k => k.included).length;
             const rate = activeRate();
-            // Thresholds tuned for the new 24-chip set:
-            // - 20 actual triggers sum to ~37% → calibrated
-            // - +AI/model demonstrators → saturating
-            // - +the/is → noise (any one of those alone is also noise)
+            // Thresholds match the new slower spawn (rate × 0.0025):
+            // - <5%   = silent (rare flares)
+            // - 5–50%  = calibrated (≈1 simultaneous flare, eye can read each)
+            // - 50–90% = saturating (~2-3 simultaneous, overlap begins)
+            // - ≥90%   = noise (3+ simultaneous, rapid; toggle 'the' to see)
             let verdict;
             if (rate < 5)        verdict = "silent—no signal";
-            else if (rate < 60)  verdict = "calibrated—meaningful";
-            else if (rate < 100) verdict = "saturating—losing signal";
+            else if (rate < 50)  verdict = "calibrated—meaningful";
+            else if (rate < 90)  verdict = "saturating—losing signal";
             else                 verdict = "noise—no signal";
             statsEl.innerHTML = `${n} keywords active · field saturation ${rate}% · <strong>${verdict}</strong>`;
           }
