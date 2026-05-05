@@ -2396,6 +2396,15 @@
       }
 
       function computeSurfaceFragments(text) {
+        // When the hero band is in wrap mode (mobile sets white-space:
+        // normal so the text spans 2-3 lines), splitting into nowrap-
+        // sized fragments would hide half of each unit — audio is
+        // unit-based, so with read-aloud on the visitor sees only
+        // fragment 0 while Vera narrates the whole sentence. Returning
+        // the full text lets the band wrap it and stay in sync.
+        if (heroText && getComputedStyle(heroText).whiteSpace === 'normal') {
+          return [text];
+        }
         const max = _surfaceMaxWidth();
         const out = [];
         function visit(t) {
