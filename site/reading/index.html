@@ -558,8 +558,119 @@ html, body {
     </div>
   </section>
 
-  <!-- ═══ Chunks 2–5 will append additional <section class="band stretch"> blocks here:
-           §2 (surface) · §3 (deep) · §4 (sky) · §5 (discipline)
+  <!-- ── Cream stretch: §2 (the surface, where reading is possible) ─── -->
+  <section class="band stretch">
+    <div class="band-inner">
+      <article class="prose">
+
+        <header class="section-head" id="section-2">
+          <span class="roman">Section 02</span>
+          <span class="label">The surface, where reading is possible.</span>
+          <span class="level">Level 2 · One demo, light math</span>
+        </header>
+
+        <p class="first no-indent">The active line is the page's center of gravity. It sits at vertical middle, in a horizontal band marked by hairlines top and bottom, and it is the only line on the page that is fully legible. Everything above the band fades upward. Everything below fades downward. Only the line at the band is bright pink, set in display weight, scaled up from body type. It is the sentence the page is currently reading.</p>
+
+        <p>This is the <em>surface</em>—the only register at which reading is possible.</p>
+
+        <p>Maurice Merleau-Ponty wrote that the world <em>appears</em>, and the appearance is what we read. The model's outputs are not signs pointing to something hidden. They are the thing showing itself, in the only way it can. To insist on reading the substrate—the weights, the gradients, the mechanism—is to refuse the appearance and demand a meaning the system cannot produce. The active line is what the system is showing right now. It is what the practitioner reads. There is nothing else to read.</p>
+
+        <p>Sit with the page for two minutes and the eyes do not look down. They settle on the surface. The deep is beautiful but unreadable. The sky is moving but cannot be parsed sentence by sentence. The line at the band is what the body attends to because it is what the body can hold.</p>
+
+        <h3>Segmentation, before reading begins</h3>
+
+        <p class="no-indent">The page reads what it reads because of choices made before the page loaded. The manifesto's prose was broken into 103 <em>reading units</em> by a script. Each unit is a sentence (or sometimes two sentences joined for italic delivery). Each unit was assigned a <em>dwell time</em>—how long it would hold the surface—calculated from its word count.</p>
+
+        <p>The choice of unit is a choice. Read by paragraph and the rhythm collapses into broad blocks; the body has nothing fine-grained to attend to. Read by clause and the page becomes a strobe; the eye cannot rest. Read by sentence and the unit is the natural breath of prose. The page chose the sentence.</p>
+
+        <p>The dwell formula is small and stubborn:</p>
+
+<pre><code>dwell_seconds = word_count × 0.35 + 1.0
+clamped to [2.0, 7.0]</code></pre>
+
+        <p class="no-indent">A three-word sentence ("Both are necessary.") gets two seconds. A long sentence about clinics and courtrooms and classrooms gets seven. The clamp matters: without a floor, terse beats vanish; without a ceiling, complex sentences would stall the page until the reader gave up. The formula was chosen by feel and held until it stopped being wrong.</p>
+
+        <!-- ── Demo 1 — Segmentation (verbatim from source) ── -->
+        <div class="demo" id="demo-segmentation" role="group" aria-label="Segmentation demonstration: toggle between paragraph, sentence, and clause segmentation to see how dwell time changes.">
+          <div class="demo-caption">Same prose, three segmentations. The page chose the middle one. The choice determines what counts as one act of reading.</div>
+          <div class="demo-controls">
+            <button data-mode="paragraph">By paragraph</button>
+            <button data-mode="sentence" class="active">By sentence</button>
+            <button data-mode="clause">By clause</button>
+          </div>
+          <div class="demo-units" id="demo-segmentation-units"></div>
+          <div class="demo-timeline" id="demo-segmentation-timeline" aria-label="Dwell timeline: each segment proportional to its dwell time."></div>
+          <div class="demo-stats" id="demo-segmentation-stats"></div>
+        </div>
+        <script>
+        (function () {
+          const para = "Our culture consumes its texts before reading them, and AI is no exception. The benchmark knows what the model is. The leaderboard knows which model is best. The red team report knows where the model is vulnerable. These knowings are preposterous in the literal sense—last things first, theory before encounter—and they are deployed into clinics and courtrooms and classrooms as if they are understood.";
+          const segs = {
+            paragraph: [para],
+            sentence: [
+              "Our culture consumes its texts before reading them, and AI is no exception.",
+              "The benchmark knows what the model is.",
+              "The leaderboard knows which model is best.",
+              "The red team report knows where the model is vulnerable.",
+              "These knowings are preposterous in the literal sense—last things first, theory before encounter—and they are deployed into clinics and courtrooms and classrooms as if they are understood."
+            ],
+            clause: [
+              "Our culture consumes its texts before reading them,",
+              "and AI is no exception.",
+              "The benchmark knows what the model is.",
+              "The leaderboard knows which model is best.",
+              "The red team report knows where the model is vulnerable.",
+              "These knowings are preposterous in the literal sense",
+              "— last things first,",
+              "theory before encounter —",
+              "and they are deployed into clinics and courtrooms and classrooms",
+              "as if they are understood."
+            ]
+          };
+          // The page's actual dwell formula
+          function dwell(text) {
+            const wc = text.split(/\s+/).filter(Boolean).length;
+            const d = wc * 0.35 + 1.0;
+            return Math.max(2.0, Math.min(7.0, d));
+          }
+          const unitsEl = document.getElementById('demo-segmentation-units');
+          const timelineEl = document.getElementById('demo-segmentation-timeline');
+          const statsEl = document.getElementById('demo-segmentation-stats');
+          const buttons = document.querySelectorAll('#demo-segmentation .demo-controls button');
+          function render(mode) {
+            const units = segs[mode];
+            const dwells = units.map(dwell);
+            const total = dwells.reduce((a, b) => a + b, 0);
+            unitsEl.innerHTML = units.map((u, i) =>
+              `<div class="demo-unit"><span class="demo-unit-id">u${String(i).padStart(2, '0')}</span> ${u}</div>`
+            ).join('');
+            timelineEl.innerHTML = dwells.map((d) =>
+              `<div class="demo-tl-segment" style="flex: ${d}" title="${d.toFixed(1)}s">${d.toFixed(1)}</div>`
+            ).join('');
+            statsEl.innerHTML = `${units.length} units · ${total.toFixed(1)}s total · avg ${(total / units.length).toFixed(1)}s per unit`;
+          }
+          buttons.forEach(b => b.addEventListener('click', () => {
+            buttons.forEach(x => x.classList.remove('active'));
+            b.classList.add('active');
+            render(b.dataset.mode);
+          }));
+          render('sentence');
+        })();
+        </script>
+
+        <p>The lesson generalizes past this page. Tokenization, chunking, segmentation—these are pre-model decisions that shape everything downstream. Most users never see them. The model "reads" what someone decided counts as a unit. Different segmentation, different reading. The first methodological commitment of any system that processes language is the commitment to <em>what counts as one</em>. Pink teaming notices the commitment. The benchmark assumes it.</p>
+
+        <aside class="aside">
+          <h4>Two ways the line could move</h4>
+          <p>An earlier draft of the page had two scaling modes—<em>smooth</em>, where the active line interpolated its size and color continuously as it crossed the band, and <em>mechanical</em>, where it snapped to display weight on entry and snapped back on exit. Both were defensible. Both produced different reading-bodies. The smooth mode breathed; the mechanical mode declared. The shipped page picks one. Which one is left as an exercise for the reader.</p>
+        </aside>
+
+      </article>
+    </div>
+  </section>
+
+  <!-- ═══ Chunks 3–5 will append additional <section class="band stretch"> blocks here:
+           §3 (deep) · §4 (sky) · §5 (discipline)
            a pink panel-closing, the footer-note stretch, and the colophon.
        ═══ -->
 
