@@ -1221,13 +1221,73 @@ clamped to [2.0, 7.0]</code></pre>
     </div>
   </section>
 
-  <!-- ═══ Chunk 5 will append:
-           §5 (discipline) cream stretch
-           pink panel-closing
-           cream stretch (footer note)
-           colophon
-           IntersectionObserver throttling for demos 4 & 5
-       ═══ -->
+  <!-- ── Cream stretch: §5 (the discipline, performed) ─── -->
+  <section class="band stretch">
+    <div class="band-inner">
+      <article class="prose">
+
+        <header class="section-head" id="section-5">
+          <span class="roman">Section 05</span>
+          <span class="label">The discipline, performed.</span>
+          <span class="level">Level 1 · No code</span>
+        </header>
+
+        <p class="first no-indent">The page is hostile to skimmers. That is the design.</p>
+
+        <p>The autoscroll cannot be sped up. The manifesto cannot be scanned. The deep does not reveal its structure unless you stay long enough to see multiple sections activate. The sky's resonance accumulates as you read; a reader who skips ahead misses it. The active line at the surface holds your attention there because everything else on the page is in motion around it, and the only way to make sense of the motion is to follow the line.</p>
+
+        <p>This is a filter. If you arrive looking to extract the discipline's claims and move on, the page will refuse. If you arrive willing to read for eight minutes, the page returns something else.</p>
+
+        <p>What the page returns is your body to the loop.</p>
+
+        <p>Sit with it for two minutes and the eyes settle on the surface. The pace becomes bearable. The deep is beautiful but unreadable, so the eyes stop trying. The sky is moving but cannot be parsed sentence by sentence, so the eyes let it. The line at the band is what the body can hold, and the body holds it. By minute six you have accumulated minute one. The reader at the surface is doing what the practitioner of pink teaming does in a working session—staying with what the system shows, refusing to skip ahead, building up the place across time.</p>
+
+        <p>This is the somatic claim the manifesto rests on but cannot make on its own page. Models do not have bodies. Their internal state has no felt sense. The practitioner's body is the only ground truth in a system that has none—the only instrument that registers when the model has agreed too easily, when the absence of friction is itself the signal, when the response feels too perfectly tuned to what the practitioner wanted to hear. The carpenter knows when the saw stops resisting. The clinician knows when the patient has gone quiet for the wrong reason. The reader knows, somewhere below the line of articulation, when the prose has stopped being prose and become performance.</p>
+
+        <p>Pink teaming is the discipline that takes that knowing seriously—that treats the body's signals as data, that returns the practitioner to the loop the AI normally evicts them from. The page is the eight-minute restoration of that loop. The discipline is what comes after.</p>
+
+        <p>Red teaming reads outputs against attack surfaces. Mechanistic interpretability reads weights against features. Pink teaming reads patterns of behavior over time across the surface where decisions are made—and the practice is computational, the same way the other two are. The embeddings are real. The projections are honest about their limits. The keywords were chosen with care for what they include and exclude. The segmentation was a methodological decision made before the page loaded. The third practice has its own substrate, pointed at what the other two cannot see.</p>
+
+      </article>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       PANEL 2 / 2 — CLOSING
+       Final two sentences pulled from the source. — ATM byline.
+       ═══════════════════════════════════════════════════════ -->
+  <section class="band panel-pink panel-closing">
+    <div class="band-inner">
+      <div class="marker">
+        <span class="pip"></span>
+        <span>Closing</span>
+        <span class="sep"></span>
+        <span>end of reading</span>
+      </div>
+      <p class="big">The page is a threshold and a test. Crossing it is the first act of the discipline.</p>
+      <div class="footer">
+        <span>— ATM</span>
+        <span>fin</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Cream stretch: footer note ─── -->
+  <section class="band stretch">
+    <div class="band-inner">
+      <article class="prose">
+        <p class="first no-indent">Written as a companion to the <a href="/" target="_self">Pink Teaming</a> manifesto landing page. The full source, the build pipeline that generates the data files, and the manifesto markdown itself live in the <a href="https://github.com/sageframe-dharma/pinkteaming.net" target="_blank" rel="noopener">sageframe-dharma/pinkteaming.net</a> repository on GitHub.</p>
+
+        <p>Built in vanilla JavaScript, HTML, and CSS. The data pipeline uses Python with <code>sentence-transformers</code> and <code>umap-learn</code>. No frameworks. No tracking. No advertising. The page is the document.</p>
+      </article>
+    </div>
+  </section>
+
+  <footer class="band colophon">
+    <div class="band-inner">
+      <span class="v">v.0.19 · May 2026 · pinkteaming.net</span>
+    </div>
+  </footer>
 
 </div>
 
@@ -1241,7 +1301,6 @@ clamped to [2.0, 7.0]</code></pre>
 
 <script>
   // Hide the bottom-right byline whenever the closing panel is in view.
-  // The closing panel is added in chunk 5; until then this no-ops gracefully.
   (function () {
     var byline = document.getElementById('byline');
     function attach() {
@@ -1260,6 +1319,29 @@ clamped to [2.0, 7.0]</code></pre>
     if (!attach()) {
       window.addEventListener('DOMContentLoaded', attach, { once: true });
     }
+  })();
+
+  // Pause continuous-rAF demos when their containing element scrolls offscreen.
+  // Demos 1, 2, 3 are user-driven (only redraw on input) and don't need this.
+  // Demos 4 and 5 expose pause/resume on window.__demoInterference / __demoKeywords.
+  (function () {
+    var targets = [
+      { sel: '#demo-interference', api: function () { return window.__demoInterference; } },
+      { sel: '#demo-keywords',     api: function () { return window.__demoKeywords;     } }
+    ];
+    targets.forEach(function (t) {
+      var el = document.querySelector(t.sel);
+      if (!el) return;
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          var a = t.api();
+          if (!a) return;
+          if (e.isIntersecting) a.resume();
+          else a.pause();
+        });
+      }, { threshold: 0 });
+      io.observe(el);
+    });
   })();
 </script>
 
