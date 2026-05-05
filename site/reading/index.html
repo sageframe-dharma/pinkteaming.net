@@ -1779,13 +1779,19 @@ clamped to [2.0, 7.0]</code></pre>
                 k.included = !k.included;
                 const t = (performance.now() - t0) / 1000;
                 if (k.included) {
-                  // Toggling ON: burst N flares of this word RIGHT NOW,
-                  // where N scales with pct so the click viscerally tracks
-                  // the keyword's frequency. pct 5 → 1 flare; pct 22 → 2;
-                  // pct 80 → 8; pct 95 → 10. Click 'the' and the sky
-                  // immediately fills; click 'pattern' and you get one
-                  // quiet ripple.
-                  const burst = Math.max(1, Math.round(k.pct / 10));
+                  // Toggling ON: burst N flares of this word, where N
+                  // scales LOGARITHMICALLY with pct so the low end spreads
+                  // out (1% vs 5% are visibly different) while the high
+                  // end compresses (95% doesn't dominate by 100×).
+                  //   1%  → 1 flare    (single quiet trigger)
+                  //   2%  → 2
+                  //   3%  → 3
+                  //   5%  → 4
+                  //   8%  → 5
+                  //   22% → 7          (saturating)
+                  //   80% → 10
+                  //   95% → 10         (the sky is full of "the")
+                  const burst = Math.max(1, Math.round(Math.log(k.pct) * 2 + 1));
                   for (let n = 0; n < burst; n++) placeFlare(t, k.word);
                 } else {
                   // Toggling OFF: jump any live flares of this word into
