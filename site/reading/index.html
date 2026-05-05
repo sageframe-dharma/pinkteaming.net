@@ -1593,32 +1593,37 @@ clamped to [2.0, 7.0]</code></pre>
           // The 20 actual keyword triggers used by the apparatus (from the
           // build pipeline's resonance-sources.json), with their real % of
           // 103 manifesto units. Plus 4 noise demonstrators (model, AI,
-          // the, is) at intermediate / saturating frequencies — kept togglable
-          // so the failure modes of saturation + pure noise are visceral.
+          // the, is) at intermediate / saturating frequencies.
+          //
+          // Start with only TWO keywords on (pattern + encounter, both 5%).
+          // The lesson is built by the reader, one toggle at a time:
+          //   2 on   → ~1 flare/minute, eye watches each lifecycle
+          //   20 on  → calibrated; field thickens, still readable
+          //   +AI/model → saturating
+          //   +the/is → noise (constant strobe, lesson lands)
           const KEYWORDS = [
-            // Real triggers — already calibrated for signal
+            // Real triggers
             { word: "pattern",       pct:  5, included: true  },
             { word: "encounter",     pct:  5, included: true  },
-            { word: "ambiguity",     pct:  4, included: true  },
-            { word: "door",          pct:  3, included: true  },
-            { word: "adversarial",   pct:  2, included: true  },
-            { word: "decorative",    pct:  2, included: true  },
-            { word: "longitudinal",  pct:  2, included: true  },
-            { word: "profit",        pct:  2, included: true  },
-            { word: "territory",     pct:  1, included: true  },
-            { word: "map",           pct:  1, included: true  },
-            { word: "interiority",   pct:  1, included: true  },
-            { word: "consumptive",   pct:  1, included: true  },
-            { word: "participatory", pct:  1, included: true  },
-            { word: "clinics",       pct:  1, included: true  },
-            { word: "courtrooms",    pct:  1, included: true  },
-            { word: "classrooms",    pct:  1, included: true  },
-            { word: "extracted",     pct:  1, included: true  },
-            { word: "durational",    pct:  1, included: true  },
-            { word: "welcome",       pct:  1, included: true  },
-            { word: "closing",       pct:  1, included: true  },
-            // Demonstrators — togglable but off by default. Show what the
-            // page deliberately excluded and why.
+            { word: "ambiguity",     pct:  4, included: false },
+            { word: "door",          pct:  3, included: false },
+            { word: "adversarial",   pct:  2, included: false },
+            { word: "decorative",    pct:  2, included: false },
+            { word: "longitudinal",  pct:  2, included: false },
+            { word: "profit",        pct:  2, included: false },
+            { word: "territory",     pct:  1, included: false },
+            { word: "map",           pct:  1, included: false },
+            { word: "interiority",   pct:  1, included: false },
+            { word: "consumptive",   pct:  1, included: false },
+            { word: "participatory", pct:  1, included: false },
+            { word: "clinics",       pct:  1, included: false },
+            { word: "courtrooms",    pct:  1, included: false },
+            { word: "classrooms",    pct:  1, included: false },
+            { word: "extracted",     pct:  1, included: false },
+            { word: "durational",    pct:  1, included: false },
+            { word: "welcome",       pct:  1, included: false },
+            { word: "closing",       pct:  1, included: false },
+            // Noise demonstrators
             { word: "model",         pct: 22, included: false }, // saturating
             { word: "AI",            pct:  8, included: false }, // saturating-ish
             { word: "the",           pct: 95, included: false }, // pure noise
@@ -1640,11 +1645,12 @@ clamped to [2.0, 7.0]</code></pre>
           let nextSpawn = 0.5;
           let raf = null;
 
-          // Flare lifetime — 10 seconds so the eye can fully watch each
+          // Flare lifetime — 12 seconds so the eye can fully watch each
           // one's lifecycle. Staged envelope below: 0.4s smoothstep rise,
-          // 0.6s hold at peak, then ~9s slow decay. Plenty of breathing
-          // room between flares at the calibrated configuration.
-          const FLARE_DURATION = 10.0;
+          // 0.6s hold at peak, then ~11s slow decay. With only 2 keywords
+          // on at start, you'll see one flare ~every minute, full
+          // breathing room between each.
+          const FLARE_DURATION = 12.0;
           const FLARE_RISE = 0.4;
           const FLARE_HOLD = 0.6;
           const FLARE_DECAY = FLARE_DURATION - FLARE_RISE - FLARE_HOLD;
@@ -1683,14 +1689,17 @@ clamped to [2.0, 7.0]</code></pre>
               word
             });
             // Spawn rate is anchored to the manifesto reading rate but
-            // scaled DOWN aggressively (rate × 0.0025) so the calibrated
-            // configuration (37%, 20 actual triggers on) gives ≈1
-            // simultaneous flare with a fresh one every ~10s. Doubling the
-            // rate doubles density. Adding 'the' (95%) creates the strobe.
-            // Floor 0.02 → ceiling 50s; min interval 0.4s so noise is
-            // dense but not literally per-frame.
-            const flaresPerSec = Math.max(0.02, rate * 0.0025);
-            nextSpawn = t + Math.max(0.4, Math.min(50, 1 / flaresPerSec));
+            // scaled WAY down (rate × 0.0018). With only 2 keywords on
+            // (10% rate) you get a flare every ~55s — the eye watches
+            // each lifecycle with NOTHING else competing for attention.
+            // Toggle more keywords on to thicken the field.
+            //   2 on   (10%)  → 55s spawn, 0.22 simul
+            //   20 on  (37%)  → 15s spawn, 0.80 simul (calibrated)
+            //   +the  (132%)  →  4.2s   , 2.86 simul (noise)
+            //   all    (242%) →  2.3s   , 5.20 simul (chaos)
+            // Floor 0.015 → ceiling 60s; min interval 0.5s.
+            const flaresPerSec = Math.max(0.015, rate * 0.0018);
+            nextSpawn = t + Math.max(0.5, Math.min(60, 1 / flaresPerSec));
           }
           function draw() {
             const t = (performance.now() - t0) / 1000;
@@ -1767,11 +1776,12 @@ clamped to [2.0, 7.0]</code></pre>
           function updateStats() {
             const n = KEYWORDS.filter(k => k.included).length;
             const rate = activeRate();
-            // Thresholds match the new slower spawn (rate × 0.0025):
-            // - <5%   = silent (rare flares)
-            // - 5–50%  = calibrated (≈1 simultaneous flare, eye can read each)
-            // - 50–90% = saturating (~2-3 simultaneous, overlap begins)
-            // - ≥90%   = noise (3+ simultaneous, rapid; toggle 'the' to see)
+            // Thresholds re-tuned for the slower spawn (rate × 0.0018):
+            // - <5%    = silent (single rare keyword, eye barely catches it)
+            // - 5-50%  = calibrated (2 keywords on = sparse but legible;
+            //                        all 20 on = busiest readable state)
+            // - 50-90% = saturating (start adding noise demonstrators)
+            // - ≥90%   = noise (the / is on, constant strobe)
             let verdict;
             if (rate < 5)        verdict = "silent—no signal";
             else if (rate < 50)  verdict = "calibrated—meaningful";
