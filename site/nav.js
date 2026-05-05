@@ -12,7 +12,7 @@
     door:     '/',
     text:     '/manifesto',
     practice: '/practice',
-    reading:  '/about',
+    reading:  '/reading',
   };
 
   const DESTINATIONS = [
@@ -36,7 +36,7 @@
     if (path === '' || path === '/index') return 'door';
     if (path.endsWith('/manifesto') || path.endsWith('/text')) return 'text';
     if (path.endsWith('/practice')) return 'practice';
-    if (path.endsWith('/about') || path.endsWith('/reading')) return 'reading';
+    if (path.endsWith('/reading')) return 'reading';
     return 'door';
   }
 

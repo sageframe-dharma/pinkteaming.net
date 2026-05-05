@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" data-page="reading">
+<head>
+<meta charset="UTF-8">
+<title>Pink Teaming · READING — How the Page Reads</title>
+<meta name="viewport" content="width=1440">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../nav.css">
+<script src="../nav.js" defer></script>
+<style>
+:root {
+  --paper: #fafaf7;
+  --ink:   #000000;
+  --pink:  #ff1493;
+
+  --font-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:  'JetBrains Mono', 'Menlo', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.chip {
+  position: fixed;
+  top: 1.25rem; left: 1.25rem;
+  z-index: 100;
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  padding: 0.55rem 0.95rem;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.chip .dot {
+  width: 7px; height: 7px;
+  background: var(--pink);
+  animation: breathe 2.4s ease-in-out infinite;
+}
+@keyframes breathe { 0%,100%{opacity:.45} 50%{opacity:1} }
+
+.byline-link {
+  position: fixed;
+  right: 1.25rem; bottom: 1.25rem;
+  z-index: 100;
+  display: inline-flex; align-items: center;
+  padding: 0.55rem 0.95rem;
+  background: var(--pink);
+  border: 1.5px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.placeholder {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+}
+.placeholder p {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.4;
+}
+</style>
+</head>
+<body>
+<div class="chip"><span class="dot"></span>Reading · How the Page Reads</div>
+
+<main class="placeholder">
+  <p>— page in progress —</p>
+</main>
+
+<a class="byline-link" href="https://atmarcus.net" target="_blank" rel="noopener">— Tyro Sageframe</a>
+</body>
+</html>
