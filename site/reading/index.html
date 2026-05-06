@@ -210,6 +210,9 @@ html, body {
   font-family: var(--font-serif);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* Prevent the mobile h1 ("Page Reads.") from pushing the document
+     wider than the viewport — same reason as manifesto/practice. */
+  overflow-x: hidden;
 }
 
 /* ── FIXED CHROME ─────────────────────────────────────────── */
@@ -692,11 +695,63 @@ html, body {
 }
 .colophon .v { color: var(--pink); }
 
-/* ── Mobile breakpoint — stack demo controls vertically ─── */
-@media (max-width: 700px) {
-  .demo-sliders, .demo-slider { grid-template-columns: 1fr; }
-  .demo-pickers select { min-width: 100%; }
-  .panel-title { padding: 6rem 0 4rem; }
+/* ── Mobile (≤768px) ─────────────────────────────────────────
+   Same scale-down pattern as manifesto/practice plus the demo-
+   specific bits. The .demo canvases scale automatically via
+   width:100% (declared above) — the bitmap stays 600x320 etc.
+   so render quality holds and pointer math remains correct. */
+@media (max-width: 768px) {
+  .band-inner          { max-width: calc(100% - 2rem); }
+  .stretch .band-inner { max-width: calc(100% - 2rem); }
+  .colophon .band-inner { max-width: calc(100% - 2rem); }
+
+  .chip       { font-size: 0.55rem; padding: 0.4rem 0.7rem; }
+  .byline-link { font-size: 0.55rem; padding: 0.4rem 0.7rem; }
+  #breath-pulse { right: 1rem; bottom: 3.4rem; }
+
+  .panel-pink         { padding: 4.5rem 0; }
+  .panel-pink .big    { font-size: clamp(2.4rem, 11vw, 4rem); line-height: 0.96; }
+  .panel-pink .marker { margin-bottom: 1.6rem; font-size: 0.6rem; letter-spacing: 0.16em; }
+  .panel-pink .footer { margin-top: 2rem; font-size: 0.55rem; letter-spacing: 0.12em; }
+
+  .panel-title          { padding: 5rem 0 3.5rem; }
+  .panel-title .eyebrow { margin-bottom: 1.4rem; font-size: 0.6rem; letter-spacing: 0.16em; }
+  /* "How the" / "Page Reads." need to fit a 375px gutter. 12vw with a
+     2.2rem floor keeps them inside the band-inner. */
+  .panel-title h1       { font-size: clamp(2.2rem, 12vw, 4.5rem); line-height: 0.9; }
+
+  .panel-closing .big   { font-size: clamp(2rem, 8vw, 3.2rem); line-height: 0.95; }
+
+  .stretch     { padding: 3rem 0; }
+  .prose       { font-size: 1rem; line-height: 1.65; }
+  .prose p     { margin-bottom: 1.3em; }
+  .prose p + p { text-indent: 1.2em; }
+  .prose h3    { font-size: 1.25rem; margin: 2rem 0 1rem; }
+  .prose pre   { padding: 0.8rem 1rem; font-size: 0.78rem; }
+
+  .section-head        { margin: 2.6rem 0 1.4rem; }
+  .section-head .label { font-size: 1.55rem; }
+  .section-head .level { font-size: 0.6rem; letter-spacing: 0.14em; margin-top: 0.6rem; }
+
+  .aside { padding: 1rem 1.1rem; font-size: 0.95rem; }
+
+  /* Demos: tighter padding so the canvas + controls have room on a phone.
+     Sliders/pickers stack to a single column. */
+  .demo                { padding: 1rem; margin: 1.8rem 0; }
+  .demo-caption        { font-size: 0.62rem; letter-spacing: 0.04em; }
+  .demo-controls       { gap: 0.4rem; font-size: 0.62rem; }
+  .demo-controls button { padding: 0.45rem 0.7rem; }
+  .demo-controls select { min-width: 0; width: 100%; flex: 1 1 100%; font-size: 0.7rem; }
+  .demo-sliders, .demo-slider { grid-template-columns: 1fr; gap: 0.4rem; }
+  .demo-pickers select { min-width: 0; width: 100%; }
+  .demo-stats          { font-size: 0.66rem; }
+  .demo-hover          { font-size: 0.9rem; min-height: 3em; }
+  .demo-units          { font-size: 0.85rem; }
+  .demo-unit-id        { width: 2.6rem; font-size: 0.62rem; }
+  .demo-tl-segment     { font-size: 0.5rem; }
+  .demo-kw-chip        { padding: 0.3rem 0.55rem; font-size: 0.62rem; }
+
+  .colophon  { padding: 3rem 0 4.5rem; font-size: 0.62rem; letter-spacing: 0.16em; }
 }
 </style>
 </head>
