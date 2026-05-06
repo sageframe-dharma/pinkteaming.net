@@ -51,6 +51,10 @@ html, body {
   font-family: var(--font-serif);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* Without this, the giant mobile title can briefly push the document
+     wider than the viewport and iOS Safari starts position:fixed
+     elements drifting horizontally. */
+  overflow-x: hidden;
 }
 
 /* ── Gateway-arrival fade-in ──────────────────────────────────
@@ -479,7 +483,10 @@ html.gateway-arrival.faded .byline-link { opacity: 1; }
   .panel-pink .footer { margin-top: 2rem; font-size: 0.55rem; letter-spacing: 0.12em; }
 
   .panel-title       { padding: 6.5rem 0 4rem; }
-  .panel-title h1    { font-size: clamp(4.2rem, 24vw, 7rem); line-height: 0.84; }
+  /* clamp floor was 4.2rem but Inter-900 "Teaming." at that size
+     overflows a 375px viewport's band-inner. 18vw with a 3rem floor
+     keeps "Teaming." inside the gutter at any phone width. */
+  .panel-title h1    { font-size: clamp(3rem, 18vw, 6rem); line-height: 0.86; }
   .panel-title .subtitle {
     margin-top: 1.6rem;
     font-size: 1.1rem;

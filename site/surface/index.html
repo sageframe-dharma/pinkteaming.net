@@ -575,86 +575,48 @@
         .section-tag { font-size: 0.42rem; }
       }
 
-      /* ── Mobile heads-up overlay (dismissible) ──────────────── */
-      .mobile-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        z-index: 100;
-        background: rgba(250, 250, 247, 0.97);
-        align-items: center;
-        justify-content: center;
-        padding: 2rem 1.5rem;
-      }
-      .mobile-overlay-card {
-        max-width: 28rem;
-        background: var(--paper);
-        border: 1.5px solid var(--ink);
-        padding: 1.6rem 1.4rem 1.4rem;
-        font-family: var(--font-serif);
-        line-height: 1.45;
-      }
-      .mobile-overlay-card .tag {
-        font-family: var(--font-mono);
-        font-size: 0.6rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--pink);
-        display: inline-flex;
-        align-items: center;
-        margin-bottom: 0.9rem;
-      }
-      .mobile-overlay-card .tag::before {
-        content: '';
-        display: inline-block;
-        width: 6px;
-        height: 6px;
-        background: var(--pink);
-        margin-right: 0.45rem;
-      }
-      .mobile-overlay-card h2 {
-        font-family: var(--font-sans);
-        font-weight: 800;
-        font-size: 1.25rem;
-        line-height: 1.2;
-        letter-spacing: -0.01em;
-        margin-bottom: 0.7rem;
-      }
-      .mobile-overlay-card p {
-        font-size: 0.95rem;
-        color: var(--ink);
-        margin-bottom: 0.9rem;
-      }
-      .mobile-overlay-card button {
-        all: unset;
-        cursor: pointer;
-        margin-top: 0.5rem;
-        padding: 0.55rem 1rem;
-        background: var(--pink);
-        border: 1.5px solid var(--ink);
-        font-family: var(--font-mono);
-        font-size: 0.65rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--ink);
-      }
+      /* ── Mobile reading-mode preamble ────────────────────────────
+         Sits at the top of the scroll stack on mobile, in the otherwise-
+         empty pink space above the first line. Scrolls up naturally as
+         reading advances and disappears off-screen. Hidden on desktop —
+         the visualization is the message there. */
+      .scroll-preamble { display: none; }
       @media (max-width: 768px) {
-        .mobile-overlay { display: flex; }
-        .mobile-overlay.dismissed { display: none; }
+        .scroll-preamble {
+          display: block;
+          padding: 0.6rem 0 2.2rem;
+          max-width: 30ch;
+        }
+        .scroll-preamble .tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 1.1rem;
+          font-family: var(--font-mono);
+          font-weight: 500;
+          font-size: 0.6rem;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: var(--ink);
+          opacity: 0.85;
+        }
+        .scroll-preamble .tag i {
+          display: block;
+          width: 6px; height: 6px;
+          background: var(--ink);
+        }
+        .scroll-preamble p {
+          font-family: var(--font-serif);
+          font-style: italic;
+          font-size: 1rem;
+          line-height: 1.5;
+          color: var(--paper);
+          text-wrap: pretty;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="mobile-overlay" id="mobile-overlay">
-      <div class="mobile-overlay-card">
-        <span class="tag">Mobile · Beta</span>
-        <h2>The reader is built for a wider screen.</h2>
-        <p>The full apparatus — the resonance field, the vector cloud, the synchronized reading view — needs the room a desktop or tablet provides.</p>
-        <p>The mobile version is in beta. You can still read along below, but the experience is meant for a larger canvas.</p>
-        <button id="mobile-overlay-dismiss">Read on anyway</button>
-      </div>
-    </div>
-
     <div class="chip"><span class="dot"></span>Pink Teaming · A Manifesto</div>
 
     <div class="foot">
@@ -2215,6 +2177,20 @@
       function buildText() {
         stackEl.innerHTML = '';
         lineEls.length = 0;
+
+        // Mobile reading-mode preamble — sits before line[0] in the scroll
+        // stack so it occupies the empty pink space above the first line
+        // initially, and scrolls up naturally as reading advances. CSS
+        // hides it entirely on desktop, so its 0 offsetHeight there leaves
+        // the lineOffset math unchanged.
+        const preamble = document.createElement('div');
+        preamble.className = 'scroll-preamble';
+        preamble.innerHTML =
+          '<span class="tag"><i></i>Reading mode</span>' +
+          '<p>The full apparatus — the resonance field, the vector cloud, ' +
+          'the synchronized reading view — lives on a wider screen.</p>';
+        stackEl.appendChild(preamble);
+
         UNITS.forEach((u, i) => {
           const el = document.createElement('div');
           el.className = 'line';
@@ -3504,9 +3480,13 @@
         // (see _onUnitEnd below).
         const AUDIO_BASE = '../';
         const audio = new Audio(AUDIO_BASE + 'audio/vera.mp3');
-        audio.preload = 'auto';
+        // 'none' so vera.mp3 isn't downloaded on page load — the file is
+        // multi-MB and the in-flight fetch makes navigating away (tapping
+        // a nav arm) feel laggy on mobile while the browser tears down
+        // the connection. Loading kicks off when the visitor clicks READ.
+        audio.preload = 'none';
         const tailAudio = new Audio();   // shared element for tail-audio playback
-        tailAudio.preload = 'auto';
+        tailAudio.preload = 'none';
 
         fetch(AUDIO_BASE + 'audio/manifest.json?v=' + Date.now())
           .then((r) => r.json())
@@ -3633,14 +3613,6 @@
       })();
 
       audioPlayer.init();
-
-      // Mobile heads-up overlay dismiss
-      (function () {
-        const ov  = document.getElementById('mobile-overlay');
-        const btn = document.getElementById('mobile-overlay-dismiss');
-        if (!ov || !btn) return;
-        btn.addEventListener('click', () => ov.classList.add('dismissed'));
-      })();
 
       loadAll().catch((err) => {
         console.error('load error', err);

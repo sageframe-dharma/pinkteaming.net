@@ -58,7 +58,12 @@
     fill var(--nav-transition-duration) var(--nav-easing);
 }
 .nav-object .star-poly.has-active { stroke-width: var(--nav-arm-stroke-active); }
-.nav-object:has(.center-hit:hover) .star-poly { fill: var(--paper); }
+/* The center-hover-flips-paper effect is for desktop pointers only.
+   On iOS Safari, :hover sticks after a tap and the star stays white
+   until another element is hovered. */
+@media (hover: hover) {
+  .nav-object:has(.center-hit:hover) .star-poly { fill: var(--paper); }
+}
 .nav-object .label-bg { fill: var(--paper); fill-opacity: 1; }
 .nav-object .arm-label {
   font-family: var(--font-mono);

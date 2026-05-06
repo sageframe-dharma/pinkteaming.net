@@ -466,11 +466,12 @@
       const halfH = navEl.offsetHeight / 2;
       let dotX, dotY;
       if (isMobile) {
-        // Mobile: corner-anchor in the upper-right. The desktop surface-
-        // band anchor parks the star in the middle of mobile's single-
-        // column reading view, which is exactly where the eye is.
-        dotX = window.innerWidth - 95;
-        dotY = 95;
+        // Mobile: corner-anchor in the upper-right with enough margin
+        // that the SVG halo (labels) stays clear of the right and top
+        // viewport edges. The desktop surface-band anchor parks the
+        // star in the middle of mobile's single-column reading view.
+        dotX = window.innerWidth - 110;
+        dotY = 110;
       } else {
         const surface = document.querySelector('.surface-band');
         if (surface) {
