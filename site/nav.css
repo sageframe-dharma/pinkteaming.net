@@ -15,19 +15,21 @@
 
 .nav-object {
   position: fixed;
-  z-index: 40;
+  /* Above the surface mobile-overlay (z-index 100) so the star stays
+     visible on top of the heads-up card and the visitor can navigate
+     away without dismissing the overlay first. */
+  z-index: 200;
   user-select: none;
-  cursor: grab;
+  cursor: default;
   background: transparent;
   border: none;
-  /* Wrapper is the SHAPE size — drag clamping uses these bounds so the
-     mark sits flush against viewport edges. Labels render outside via
-     an oversized SVG centered on this box; they overflow visibly. */
+  /* Wrapper is the SHAPE size. Position is locked at the default for
+     the current page; labels render outside via an oversized SVG
+     centered on this box and overflow visibly. */
   width: var(--nav-container-size);
   height: var(--nav-container-size);
   overflow: visible;
 }
-.nav-object.dragging { cursor: grabbing; }
 .nav-object.snapping {
   transition: left 200ms var(--nav-easing), top 200ms var(--nav-easing);
 }
@@ -79,10 +81,26 @@
 
 /* ── Mobile: shrink the star so it doesn't dominate ─────────── */
 @media (max-width: 768px) {
-  :root { --nav-container-size: 130px; }
+  :root {
+    --nav-container-size: 130px;
+    /* SVG text inside a viewBox scales with the viewBox. Mobile SVG is
+       220px display for a 300-unit viewBox = 0.73 scale, so 1rem here
+       actually renders at ~12 display px. Bumping to 1.4rem brings the
+       letter up to ~16 display px — readable button-label size.
+       This var also drives the white pill (paintArms reads it via JS),
+       so changing it sizes both text and bg coherently. */
+    --nav-label-size: 1.4rem;
+  }
   .nav-object svg {
     width: calc(var(--nav-container-size) + 90px);
     height: calc(var(--nav-container-size) + 90px);
   }
-  .nav-object .arm-label { font-size: 0.55rem; }
+  .nav-object .arm-label { font-weight: 500; }
+  .nav-object .arm-label.active { font-weight: 700; }
+}
+
+/* ── Touch: drag is suppressed in JS; match the cursor here. */
+@media (pointer: coarse) {
+  .nav-object,
+  .nav-object.dragging { cursor: default; }
 }

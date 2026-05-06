@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Pink Teaming · TEXT — The Manifesto</title>
-<meta name="viewport" content="width=1440">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -458,6 +458,64 @@ html.gateway-arrival.faded .byline-link { opacity: 1; }
 }
 .colophon span { display: block; }
 .colophon .v { color: var(--pink); }
+
+/* ── Mobile (≤768px) ─────────────────────────────────────────
+   The page was authored for a desktop canvas — the giant title
+   panel, 13rem of vertical padding, and a 6.4em dropcap all
+   need to scale down on phones. Type minimums via clamp() were
+   set for desktop (e.g. h1 min 11rem = 176px) so we override
+   them outright here rather than fight the clamps. */
+@media (max-width: 768px) {
+  .band-inner          { max-width: calc(100% - 2rem); }
+  .stretch .band-inner { max-width: calc(100% - 2rem); }
+  .colophon .band-inner { max-width: calc(100% - 2rem); }
+
+  .chip       { font-size: 0.55rem; padding: 0.4rem 0.7rem; }
+  .byline-link { font-size: 0.55rem; padding: 0.4rem 0.7rem; }
+
+  .panel-pink        { padding: 4.5rem 0; }
+  .panel-pink .big   { font-size: clamp(2.4rem, 11vw, 4rem); line-height: 0.96; }
+  .panel-pink .marker { margin-bottom: 1.6rem; font-size: 0.6rem; letter-spacing: 0.16em; }
+  .panel-pink .footer { margin-top: 2rem; font-size: 0.55rem; letter-spacing: 0.12em; }
+
+  .panel-title       { padding: 6.5rem 0 4rem; }
+  .panel-title h1    { font-size: clamp(4.2rem, 24vw, 7rem); line-height: 0.84; }
+  .panel-title .subtitle {
+    margin-top: 1.6rem;
+    font-size: 1.1rem;
+    line-height: 1.35;
+  }
+
+  .panel-closing .big     { font-size: clamp(3rem, 13vw, 5rem); line-height: 0.92; }
+  .panel-closing .welcome { margin-top: 1.1em; font-size: 0.82em; }
+
+  .stretch        { padding: 3.5rem 0; }
+  .prose          { font-size: 1.05rem; line-height: 1.65; }
+  .prose p        { margin-bottom: 1.3em; }
+  .prose p + p    { text-indent: 1.2em; }
+
+  .dropcap::first-letter {
+    font-size: 4.4em;
+    margin: 0.04em 0.04em 0 -0.04em;
+  }
+
+  .statement       { margin: 2.4rem 0 1.4rem; }
+  .statement .marker { font-size: 0.6rem; margin-bottom: 0.6rem; }
+  .statement .title  { font-size: 1.7rem; line-height: 1.08; }
+
+  .practice        { padding-left: 0.8em; }
+  .pullquote       { font-size: 1.1rem; margin: 1.8rem 0; padding: 0.9rem 0; }
+
+  .section-head        { margin: 3rem 0 1.6rem; }
+  .section-head .label { font-size: 2.4rem; }
+
+  .dot-break  { margin: 2.4rem 0; }
+  .door-line  { font-size: 1.5rem; margin-top: 2.4rem; }
+
+  .footnotes { margin-top: 4rem; font-size: 0.88rem; }
+
+  .colophon  { padding: 3rem 0 4.5rem; font-size: 0.62rem; letter-spacing: 0.16em; }
+}
 </style>
 </head>
 <body>

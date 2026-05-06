@@ -19,11 +19,17 @@
     reading:  '/reading',
   };
 
+  // Mobile uses single-letter arm labels (S/T/P/R) so the labels stay
+  // tiny and never collide when the star re-rolls its angles. Coarse
+  // pointer = touch device → drag init is suppressed below.
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  const isCoarse = window.matchMedia('(pointer: coarse)').matches;
+
   const DESTINATIONS = [
-    { id: 'surface',  label: 'SURFACE',  baseAngle: 295, restRank: 0 },
-    { id: 'text',     label: 'TEXT',     baseAngle: 30,  restRank: 1 },
-    { id: 'reading',  label: 'READING',  baseAngle: 220, restRank: 2 },
-    { id: 'practice', label: 'PRACTICE', baseAngle: 130, restRank: 3 },
+    { id: 'surface',  label: isMobile ? 'S' : 'SURFACE',  baseAngle: 295, restRank: 0 },
+    { id: 'text',     label: isMobile ? 'T' : 'TEXT',     baseAngle: 30,  restRank: 1 },
+    { id: 'reading',  label: isMobile ? 'R' : 'READING',  baseAngle: 220, restRank: 2 },
+    { id: 'practice', label: isMobile ? 'P' : 'PRACTICE', baseAngle: 130, restRank: 3 },
   ];
   const ANGLE_JITTER = 22;
   const MIN_ANGULAR_SEP = 55;
@@ -125,11 +131,12 @@
   svgEl.appendChild(centerDot);
 
   // Invisible click target around the center dot — re-rolls arm angles.
+  // Bumped on mobile so taps don't fall through the small visible dot.
   const centerHit = document.createElementNS(SVG_NS, 'circle');
   centerHit.classList.add('center-hit');
   centerHit.setAttribute('cx', CENTER);
   centerHit.setAttribute('cy', CENTER);
-  centerHit.setAttribute('r', 14);
+  centerHit.setAttribute('r', isMobile ? 22 : 14);
   centerHit.addEventListener('click', (e) => {
     e.stopPropagation();
     if (justDragged) return;
@@ -154,7 +161,7 @@
 
     const hit = document.createElementNS(SVG_NS, 'circle');
     hit.classList.add('arm-hit');
-    hit.setAttribute('r', 24);
+    hit.setAttribute('r', isMobile ? 32 : 24);
     g.appendChild(hit);
 
     g.__labelBg = labelBg;
@@ -226,7 +233,10 @@
       const charAdvance = fontPx * 0.68;
       const textW = d.label.length * charAdvance;
       const textH = fontPx * 1.05;
-      const padX = 5, padY = 2.5;
+      // Mobile: bigger pill padding so the single letter has air around
+      // it. Desktop pill stays tight (5/2.5).
+      const padX = isMobile ? 8 : 5;
+      const padY = isMobile ? 4.5 : 2.5;
 
       let bgX;
       if (anchor === 'start')      bgX = labelTip.x;
@@ -385,16 +395,9 @@
     return { x: cx, y: cy };
   }
 
-  navEl.addEventListener('mousedown', (e) => {
-    if (e.target.classList && (e.target.classList.contains('arm-hit') || e.target.classList.contains('center-hit'))) return;
-    dragging = true;
-    justDragged = false;
-    const r = navEl.getBoundingClientRect();
-    dragStart = { x: e.clientX, y: e.clientY };
-    posStart = { x: r.left, y: r.top };
-    navEl.classList.add('dragging');
-    e.preventDefault();
-  });
+  // Drag is intentionally disabled — the nav is locked to its per-page
+  // default position. The mousemove/mouseup listeners below remain but
+  // are inert because `dragging` never becomes true.
 
   window.addEventListener('mousemove', (e) => {
     if (!dragging) return;
@@ -454,21 +457,30 @@
       }
     }
 
-    if (typeof saved.x === 'number' && typeof saved.y === 'number') {
-      const c = clampToViewport(saved.x, saved.y, false);
-      saveState({ active, x: c.x, y: c.y });
-    } else {
+    // Position is locked to the per-page default. We deliberately ignore
+    // any previously saved x/y — drag is disabled, so the only place
+    // those values came from is older builds, and using them here would
+    // freeze the nav at a stale spot relative to the new layout.
+    {
       const halfW = navEl.offsetWidth  / 2;
       const halfH = navEl.offsetHeight / 2;
-      const surface = document.querySelector('.surface-band');
       let dotX, dotY;
-      if (surface) {
-        const r = surface.getBoundingClientRect();
-        dotX = r.right - DEFAULT_DOT_RIGHT;
-        dotY = r.bottom - DEFAULT_DOT_ABOVE_SURFACE;
+      if (isMobile) {
+        // Mobile: corner-anchor in the upper-right. The desktop surface-
+        // band anchor parks the star in the middle of mobile's single-
+        // column reading view, which is exactly where the eye is.
+        dotX = window.innerWidth - 95;
+        dotY = 95;
       } else {
-        dotX = window.innerWidth - DEFAULT_DOT_RIGHT;
-        dotY = FALLBACK_DOT_TOP;
+        const surface = document.querySelector('.surface-band');
+        if (surface) {
+          const r = surface.getBoundingClientRect();
+          dotX = r.right - DEFAULT_DOT_RIGHT;
+          dotY = r.bottom - DEFAULT_DOT_ABOVE_SURFACE;
+        } else {
+          dotX = window.innerWidth - DEFAULT_DOT_RIGHT;
+          dotY = FALLBACK_DOT_TOP;
+        }
       }
       setPos(dotX - halfW, dotY - halfH);
     }
