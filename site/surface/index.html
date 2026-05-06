@@ -3459,6 +3459,29 @@
         setActive(activeIdx + dir);
       }, { passive: false });
 
+      /* ── Touch swipe nav (mobile) ─────────────────────────────────
+         Swipe up = advance, swipe down = retreat. Accumulates like the
+         wheel handler but uses a single-swipe model: reset origin on
+         each fire so the user can chain swipes naturally. */
+      let _touchStartY = 0;
+      let _touchLastFire = 0;
+      const TOUCH_THRESHOLD = 40;   // px of swipe per unit advance
+      const TOUCH_THROTTLE_MS = 300;
+      window.addEventListener('touchstart', (e) => {
+        _touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+      window.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const dy = _touchStartY - e.touches[0].clientY;
+        const now = performance.now();
+        if (Math.abs(dy) < TOUCH_THRESHOLD) return;
+        if (now - _touchLastFire < TOUCH_THROTTLE_MS) return;
+        const dir = dy > 0 ? 1 : -1;
+        _touchStartY = e.touches[0].clientY;
+        _touchLastFire = now;
+        setActive(activeIdx + dir);
+      }, { passive: false });
+
       /* ── Audio reading (single Vera MP3, position-based seek) ────────────────
    One <audio> element holds vera.mp3. playUnit decides whether to seek by
    comparing the current audio position to the target unit's start_ms — if
